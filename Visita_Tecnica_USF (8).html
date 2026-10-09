@@ -1,0 +1,1136 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Visita Técnica USF · Distrito Sanitário VIII</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app bar · lista de visitas (painel) · formulário com navegação por seções à esquerda (select no celular) · relatório */
+:root{
+  --bg:#F2F5F4; --surface:#FFFFFF; --surface-2:#F7FAF9; --ink:#14221E; --muted:#596A65; --line:#D6E0DC;
+  --accent:#0D6A56; --accent-ink:#FFFFFF; --accent-soft:#DCEEE8;
+  --ok:#1E7F47; --ok-soft:#DDF1E4; --warn:#9A6412; --warn-soft:#F8ECD3; --bad:#B4380C; --bad-soft:#F9E1D7; --na:#7B8884; --na-soft:#E8ECEB;
+  --f-display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", Roboto, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1614; --surface:#15201D; --surface-2:#19262282; --ink:#E3ECE9; --muted:#97A8A3; --line:#29382F;
+  --accent:#4EC3A0; --accent-ink:#06201A; --accent-soft:#163A30;
+  --ok:#56D38A; --ok-soft:#163626; --warn:#EDB54E; --warn-soft:#3A2D14; --bad:#F77D63; --bad-soft:#3E1D14; --na:#869590; --na-soft:#24302C;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1614; --surface:#15201D; --surface-2:#19262282; --ink:#E3ECE9; --muted:#97A8A3; --line:#29382F;
+  --accent:#4EC3A0; --accent-ink:#06201A; --accent-soft:#163A30;
+  --ok:#56D38A; --ok-soft:#163626; --warn:#EDB54E; --warn-soft:#3A2D14; --bad:#F77D63; --bad-soft:#3E1D14; --na:#869590; --na-soft:#24302C;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;margin:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.2}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+.appbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.appbar-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.mark{width:30px;height:30px;border-radius:7px;background:var(--accent);display:grid;place-items:center;flex:none}
+.mark svg{width:18px;height:18px}
+.brand-t{font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand-s{font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.org{font-family:var(--f-display);font-weight:700;font-size:14px;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:4px 10px;white-space:nowrap}
+.save-state{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--na)}
+.dot.ok{background:var(--ok)} .dot.busy{background:var(--warn)} .dot.err{background:var(--bad)}
+
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:24px 64px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 14px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--line)}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:5px 10px;font-size:14px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.banner{border:1px solid var(--line);background:var(--warn-soft);color:var(--ink);border-radius:var(--r);padding:10px 14px;font-size:14.5px;margin-bottom:18px}
+
+/* Lista */
+.list-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.list-head h1{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.list-head p{margin:4px 0 0;color:var(--muted);max-width:60ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.stat b{display:block;font-family:var(--f-mono);font-size:24px;font-weight:500}
+.stat span{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.filters input,.filters select{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 12px}
+.filters input{flex:1;min-width:200px}
+.vtable-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow-x:auto}
+table.vt{width:100%;border-collapse:collapse;min-width:760px}
+.vt th{text-align:left;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.vt td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+.vt tr:last-child td{border-bottom:0}
+.vt tbody tr{cursor:pointer}
+.vt tbody tr:hover td{background:var(--surface-2)}
+.u-name{font-weight:700}
+.u-sub{font-size:13.5px;color:var(--muted)}
+.pill{display:inline-block;font-size:12.5px;font-weight:700;border-radius:99px;padding:2px 10px;text-transform:uppercase;letter-spacing:.04em}
+.pill.draft{background:var(--warn-soft);color:var(--warn)}
+.pill.done{background:var(--ok-soft);color:var(--ok)}
+.bar{height:6px;border-radius:3px;background:var(--na-soft);overflow:hidden;width:100%;min-width:70px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.score{font-family:var(--f-mono);font-weight:500}
+.score.g{color:var(--ok)} .score.m{color:var(--warn)} .score.b{color:var(--bad)}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty h3{color:var(--ink);font-size:19px;margin-bottom:6px}
+
+/* Formulário */
+.form-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.form-top h1{font-size:22px;font-weight:800;flex:1;min-width:200px;letter-spacing:-.01em}
+.grid{display:grid;grid-template-columns:270px minmax(0,1fr);gap:24px;align-items:start}
+.snav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 72px);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px;max-height:calc(100vh - 100px);overflow:auto}
+.snav-p{padding:8px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.snav-p small{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px}
+.snav button{display:grid;grid-template-columns:30px 1fr auto;gap:6px;align-items:center;width:100%;text-align:left;border:0;background:transparent;border-radius:6px;padding:7px 8px;cursor:pointer;font-size:14.5px;line-height:1.3}
+.snav button:hover{background:var(--surface-2)}
+.snav button.on{background:var(--accent-soft);font-weight:600}
+.snav .n{font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+.snav .c{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.snav .c.full{color:var(--ok)}
+.msel{display:none}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.sec-h{display:flex;gap:14px;align-items:baseline;margin-bottom:6px}
+.sec-h .n{font-family:var(--f-mono);color:var(--accent);font-size:15px;font-weight:500}
+.sec-h h2{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.guide{color:var(--muted);font-size:15px;max-width:72ch;margin:0 0 20px}
+.sub{font-family:var(--f-display);font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin:22px 0 8px;padding-top:14px;border-top:1px dashed var(--line)}
+.fields{display:flex;flex-direction:column;gap:16px}
+.f label.l,.f .l{display:block;font-weight:600;font-size:15px;margin-bottom:5px}
+.f .h{font-size:13.5px;color:var(--muted);margin:-2px 0 6px}
+.f input[type=text],.f input[type=number],.f input[type=date],.f input[type=time],.f textarea,.f select{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:8px 10px}
+.f textarea{min-height:84px;resize:vertical;line-height:1.45}
+.f input:focus,.f textarea:focus,.f select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+
+.checks{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ck{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.checks-item:last-child .ck{border-bottom:0}
+.ck .t{font-size:15.5px}
+.ck .t em{font-style:normal;color:var(--muted);font-size:13px;display:block}
+.tri{display:flex;gap:4px}
+.tri button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 9px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--muted);min-width:46px}
+.tri button:hover{border-color:var(--ink)}
+.tri button[aria-pressed=true][data-v=S]{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.tri button[aria-pressed=true][data-v=P]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.tri button[aria-pressed=true][data-v=N]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.tri button[aria-pressed=true][data-v=NA]{background:var(--na-soft);border-color:var(--na);color:var(--ink)}
+.sec-score{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted);margin:-8px 0 18px}
+
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
+table.ft{border-collapse:collapse;width:100%;min-width:720px}
+.ft th{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:8px 10px;background:var(--surface-2);border-bottom:1px solid var(--line);font-weight:600}
+.ft td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.ft tr:last-child td{border-bottom:0}
+.ft td.pn{font-weight:600;font-size:14.5px;padding-top:12px;min-width:170px}
+.ft input,.ft select,.ft textarea{width:100%;border:1px solid transparent;background:transparent;border-radius:5px;padding:6px 8px}
+.ft input:hover,.ft select:hover,.ft textarea:hover{border-color:var(--line)}
+.ft input:focus,.ft select:focus,.ft textarea:focus{border-color:var(--accent);background:var(--surface-2);outline:none}
+.ft textarea{min-height:38px;resize:vertical}
+.ft .w-n{width:90px} .ft .w-c{width:130px}
+.lrow{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:start;margin-bottom:8px}
+.lrow .i{font-family:var(--f-mono);color:var(--muted);padding-top:9px;text-align:right}
+.x{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:8px;border-radius:6px;font-size:18px;line-height:1}
+.x:hover{color:var(--bad);background:var(--bad-soft)}
+.vrow{display:grid;grid-template-columns:minmax(140px,1fr) minmax(100px,.6fr) minmax(100px,.6fr) auto;gap:8px;margin-bottom:8px;align-items:center}
+.secnav-bottom{display:flex;justify-content:space-between;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.locked .f input,.locked .f textarea,.locked .f select,.locked .tri button,.locked .x,.locked .addbtn{pointer-events:none;opacity:.75}
+
+/* Relatório */
+.report{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:28px;max-width:900px;margin:0 auto}
+.report h1{font-size:24px;font-weight:800}
+.report h2{font-size:17px;margin:26px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.report h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+.report p{margin:4px 0}
+.report .kv{display:grid;grid-template-columns:minmax(150px,240px) minmax(0,1fr);gap:4px 16px;font-size:15px}
+.report .kv dt{color:var(--muted)}
+.report .kv dd{margin:0}
+.report table{border-collapse:collapse;width:100%;font-size:14.5px;margin:6px 0}
+.report th,.report td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.report th{background:var(--surface-2);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.report .tw{overflow-x:auto}
+.r-ck{display:grid;grid-template-columns:minmax(0,1fr) 80px;gap:8px;font-size:14.5px;padding:4px 0;border-bottom:1px dotted var(--line)}
+.r-ck b{text-align:right;font-size:13px}
+.v-S{color:var(--ok)} .v-P{color:var(--warn)} .v-N{color:var(--bad)} .v-NA,.v-{color:var(--na)}
+.r-sum{display:grid;grid-template-columns:minmax(0,1fr) 120px 52px;gap:10px;align-items:center;font-size:14.5px;padding:3px 0}
+.muted{color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14.5px;z-index:50;max-width:calc(100% - 32px)}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--bad-soft);border:1px solid var(--bad);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:15px}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .snav{display:none}
+  .msel{display:block;position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px);z-index:10;background:var(--bg);padding-block:8px}
+  .msel select{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:10px 12px;font-weight:600}
+  .sec{padding:18px 14px}
+  .ck{grid-template-columns:minmax(0,1fr)}
+  .vrow{grid-template-columns:1fr 1fr auto}
+  .vrow input[type=date]{grid-column:1 / -1}
+  .report{padding:18px 14px}
+  .report .kv{grid-template-columns:minmax(0,1fr)}
+  .report .kv dt{margin-top:6px}
+  .brand-s{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Login */
+.login{max-width:400px;margin:40px auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.login h1{font-size:22px;font-weight:800;margin-bottom:4px}
+.login p{color:var(--muted);margin:0 0 16px;font-size:14.5px}
+.login label{display:block;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px}
+.login input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:10px 12px}
+.login .btn{width:100%;justify-content:center;margin-top:16px}
+.login .msg{margin-top:12px;font-size:14px;padding:8px 12px;border-radius:var(--r);background:var(--warn-soft)}
+.login .msg.ok{background:var(--ok-soft)}
+.login .switch{margin-top:14px;text-align:center;font-size:14px;color:var(--muted)}
+.login .switch a{color:var(--accent);font-weight:600;cursor:pointer}
+
+/* Editor do roteiro */
+.re{max-width:900px;margin:0 auto}
+.re-intro{background:var(--accent-soft);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;font-size:14.5px;margin-bottom:16px}
+.re-sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.re-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.re-head .n{font-family:var(--f-mono);background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 8px;font-weight:600}
+.re input[type=text],.re textarea{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:7px 10px}
+.re textarea{min-height:60px;resize:vertical;line-height:1.4}
+.re-head input{font-weight:700;font-family:var(--f-display)}
+.re-lab{display:block;font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px}
+.re-sub{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px}
+.re-item{display:flex;align-items:center;gap:8px;margin:6px 0}
+.re-item .tag{font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:1px 8px;white-space:nowrap}
+.re-item.off input{text-decoration:line-through;opacity:.55}
+.re-item.new input{border-color:var(--accent)}
+.re-actions{position:sticky;bottom:0;background:var(--bg);padding:12px 0;display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;border-top:1px solid var(--line)}
+</style>
+
+<header class="appbar">
+  <div class="appbar-in">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="color:var(--accent-ink)"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div style="min-width:0">
+        <div class="brand-t">Visita Técnica USF</div>
+        <div class="brand-s">Roteiro de visita técnica · Unidade de Saúde da Família</div>
+      </div>
+    </div>
+    <div class="org">Distrito Sanitário VIII</div>
+    <button class="btn ghost sm" id="logoutBtn" hidden title="Sair da conta">Sair</button>
+    <div class="save-state" id="saveState" hidden><span class="dot" id="saveDot"></span><span id="saveTxt"></span></div>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <div class="empty"><h3>Carregando visitas…</h3><p>Conectando ao banco de visitas compartilhado.</p></div>
+</main>
+
+<script>
+/* ============ Estrutura do roteiro ============ */
+const PROFS = ["Médico(a)","Enfermeiro(a)","Cirurgião(ã)-Dentista","Técnico(a)/Auxiliar de enfermagem","Agente Comunitário de Saúde (ACS)","Técnico(a)/Auxiliar de saúde bucal","Auxiliar administrativo – Recepção","Auxiliar administrativo – Farmácia","Auxiliar administrativo – Regulação","Gerente"];
+
+function S(id,n,title,guide,items){
+  let ci=0;
+  const fields = items.map(it=>{
+    if(typeof it==="string") return {type:"check",k:`${id}_c${++ci}`,label:it};
+    if(it.type==="check") return {...it,k:`${id}_c${++ci}`};
+    return it;
+  });
+  return {id,n,title,guide,fields};
+}
+const C=(label,o={})=>({type:"check",label,...o});
+const SUB=label=>({type:"sub",label});
+
+const SECTIONS = [
+  S("s1","1","Identificação da unidade","Inclua informações da USF: nº de atendimentos, resultado dos indicadores de qualidade e do acolhimento. Registre todas as datas e todos os profissionais da visita.",[
+    {type:"text",k:"unidade",label:"Unidade de Saúde",req:true},
+    {type:"row",fields:[{type:"number",k:"n_esf",label:"Nº de eSF"},{type:"text",k:"n_atend",label:"Nº de atendimentos"}]},
+    {type:"text",k:"populacao",label:"População / território adscrito / Nº de cadastros"},
+    {type:"textarea",k:"indicadores",label:"Resultado dos indicadores de qualidade (AlumIA)"},
+    {type:"textarea",k:"acolh_result",label:"Resultado da avaliação de implantação do acolhimento"},
+    {type:"visits",k:"visitas",label:"Datas e horários das visitas",help:"Registre todas as datas em que as visitas foram realizadas."},
+    {type:"textarea",k:"responsaveis",label:"Responsáveis pela visita",help:"Um profissional por linha."}
+  ]),
+  S("s2","2","Avaliação da estrutura e funcionamento da unidade","Na estrutura física, verifique as condições de acesso, a acessibilidade, a recepção e a sala de espera, os consultórios e salas, e se existem fluxos estabelecidos para uso dos espaços.",[
+    "Condições de acesso à unidade adequadas",
+    "Acessibilidade garantida",
+    "Recepção e sala de espera utilizadas conforme preconizado pelo MS",
+    "Consultórios em quantidade suficiente",
+    "Organização definida para utilização dos consultórios",
+    "Sala de acolhimento / procedimentos / curativos / coleta adequada",
+    "Sala de vacinação adequada",
+    "Farmácia / dispensação de medicamentos adequada",
+    "Fluxos estabelecidos para os profissionais no uso de todos os espaços",
+    "Usuários entendem as rotinas estabelecidas na unidade",
+    {type:"textarea",k:"s2_obs",label:"Observações"}
+  ]),
+  S("s3","3","Organização do processo de trabalho e composição da equipe","Nas observações, inclua a quantidade de afastamentos no último ano (licença médica, prêmio, férias etc.). Pode acrescentar o perfil do profissional.",[
+    {type:"team",k:"equipe",label:"Composição da equipe"},
+    {type:"textarea",k:"s3_ref",label:"Tem referência de eMulti, PACS, PICS, CAPS? Como está o engajamento e as atividades?"},
+    {type:"textarea",k:"s3_gerente",label:"Qual o perfil do gerente?"}
+  ]),
+  S("s4","4","Horários","Verifique o cumprimento dos horários de abertura, chegada dos profissionais, início dos atendimentos e atividades da equipe.",[
+    "Unidade inicia o atendimento no horário estabelecido",
+    "Profissionais chegam no horário previsto",
+    "Atendimentos iniciam conforme a programação da agenda",
+    "Há cumprimento dos horários destinados às atividades externas",
+    "Reuniões e demais atividades da equipe iniciam no horário programado",
+    "Eventuais atrasos são justificados e registrados conforme as normas locais",
+    "Existe acompanhamento sistemático do cumprimento da jornada",
+    {type:"textarea",k:"s4_obs",label:"Observações"}
+  ]),
+  S("s5","5","Recursos materiais e equipamentos","Disponibilidade e condições de uso de computadores, impressora, sistemas de informação, equipamentos para avaliação dos usuários e materiais educativos.",[
+    "Computadores disponíveis e em condições de uso",
+    "Impressora disponível e funcionando",
+    "Acesso aos sistemas de informação",
+    C("Equipamentos funcionando para avaliação dos usuários",{note:"Balança, esfigmomanômetro, fita, sonar etc."}),
+    "Insumos para planejamento familiar disponíveis",
+    "Materiais e/ou ações para atividades educativas e educação popular",
+    {type:"textarea",k:"s5_falta",label:"Há falta ou insuficiência de algum recurso para avaliação adequada aos usuários?"}
+  ]),
+  S("s6","6","Territorialização e conhecimento da população","Verifique se a equipe conhece o território e usa essas informações para planejar as ações.",[
+    "Conhece as características do território",
+    "Tem diagnóstico territorial",
+    "Identifica os principais problemas de saúde da população",
+    "Conhece grupos e situações de maior vulnerabilidade",
+    "Utiliza informações do território para planejar as ações",
+    "Mantém articulação com equipamentos sociais do território",
+    "Realiza ações extramuros quando necessárias",
+    {type:"textarea",k:"s6_terr",label:"Principais características / problemas identificados no território"}
+  ]),
+  S("s7","7","Organização das atividades e trabalho em equipe","Verifique o planejamento das atividades conforme as necessidades do território, as reuniões de equipe, a divisão de responsabilidades e a articulação com a rede.",[
+    SUB("Planejamento e organização"),
+    "Atividades planejadas de acordo com as necessidades do território",
+    "São realizadas reuniões de equipe",
+    "As reuniões de equipe são registradas",
+    "Existe divisão / compartilhamento de responsabilidades",
+    "São discutidos casos que necessitam de acompanhamento conjunto",
+    "A equipe avalia periodicamente seus resultados",
+    "Há ações planejadas a partir do Recife Monitora / indicadores",
+    "Realiza atividades do PSE",
+    C("Articulação com outros serviços da rede",{note:"PAC, eMulti, PICS, CNaR, CAPS, especializados, urgência e emergência, vigilância, assistência farmacêutica, diagnóstico, assistência social"}),
+    {type:"textarea",k:"s7_plan",label:"Como ocorre o planejamento do trabalho da equipe?"},
+    SUB("Trabalho em equipe"),
+    "Comunicação adequada entre os profissionais",
+    "Decisões são discutidas coletivamente",
+    "Profissionais conhecem as atribuições uns dos outros",
+    "Existe colaboração entre as diferentes categorias",
+    "Há discussão de casos e situações complexas",
+    "Há integração entre atividades dentro e fora da unidade",
+    "Profissionais participam do planejamento das ações",
+    {type:"textarea",k:"s7_equipe",label:"Observações sobre o trabalho em equipe"},
+    {type:"textarea",k:"s7_rede",label:"Como ocorre o encaminhamento e o acompanhamento dos usuários na rede?"}
+  ]),
+  S("s8","8","Organização da agenda e oferta de cuidados","Avalie se a disponibilidade dos profissionais se traduz efetivamente em acesso aos cuidados.",[
+    "Disponibilidade dos profissionais se traduz em acesso aos cuidados",
+    "Agenda organizada de acordo com as necessidades da população (toda a oferta de cuidado)",
+    C("A agenda é blocada?",{neutral:true,note:"Informativo — não entra no índice de conformidade"}),
+    "Há equilíbrio entre demanda programada e demanda espontânea",
+    "São reservados horários para atendimento oportuno",
+    "Consultas e procedimentos ofertados regularmente",
+    "Há acompanhamento da taxa de absenteísmo dos usuários",
+    "Há estratégias para reduzir horários ociosos",
+    "Usuários são informados sobre alterações na agenda",
+    "A unidade realiza busca ativa quando necessária",
+    "Existe acompanhamento da demanda reprimida",
+    {type:"textarea",k:"s8_obs",label:"Observações"}
+  ]),
+  S("s9","9","Acolhimento e acesso dos usuários","Avalie a recepção, a orientação, a organização do fluxo e a identificação de situações de risco.",[
+    "Usuário é recebido e orientado de forma acolhedora",
+    "Usuários recebem informações sobre os serviços durante o acolhimento",
+    "Existe organização do fluxo de atendimento",
+    "As demandas espontâneas são avaliadas",
+    "Urgências e situações de risco são identificadas e atendidas de imediato",
+    "Usuário é encaminhado / orientado quando necessita de outro serviço",
+    "Agenda dos profissionais organizada para o acolhimento",
+    "São desenvolvidas estratégias para facilitar o acesso",
+    "Vulnerabilidade social e demais determinantes são considerados na classificação de risco",
+    {type:"textarea",k:"s9_obs",label:"Observações sobre o acesso e acolhimento"}
+  ]),
+  S("s10","10","Atenção à saúde e acompanhamento dos usuários","Verifique qualitativamente a realização das principais ações da Atenção Básica.",[
+    SUB("Ações realizadas"),
+    "Consultas médicas","Consultas de enfermagem","Atendimento odontológico","Atendimento à demanda espontânea","Pré-natal","Puericultura e acompanhamento infantil","Acompanhamento de pessoas com hipertensão","Acompanhamento de pessoas com diabetes","Saúde da mulher","Saúde do homem","Saúde do idoso","Saúde mental","Imunização","Curativos e procedimentos","Visitas domiciliares","Ações de promoção da saúde","Ações de prevenção de doenças","Atividades coletivas e educação em saúde","Busca ativa de usuários quando indicada",
+    SUB("Continuidade do cuidado"),
+    "Há acompanhamento de condições crônicas",
+    "Encaminhamentos realizados quando necessários",
+    "Existe continuidade do cuidado após encaminhamentos",
+    "Acompanhamento dos usuários com base na estratificação",
+    {type:"textarea",k:"s10_maior",label:"Como são identificadas e acompanhadas as pessoas com maior necessidade de cuidado?"}
+  ]),
+  S("s10_1","10.1","Segurança e humanização","Analise as medidas de segurança do paciente, privacidade e a comunicação com o usuário.",[
+    "São adotadas medidas de segurança do paciente",
+    "Há identificação adequada do usuário quando necessária",
+    "Procedimentos realizados com técnica e segurança",
+    "Sigilo e privacidade são respeitados",
+    "Usuário participa das decisões sobre seu cuidado",
+    "Comunicação entre profissional e usuário é clara e respeitosa",
+    {type:"textarea",k:"s10_1_obs",label:"Observações"}
+  ]),
+  S("s11","11","Atuação dos Agentes Comunitários de Saúde","Avalie o conhecimento da microárea, o planejamento das visitas e a integração dos ACS com a equipe.",[
+    "ACS conhece o território e principalmente sua microárea",
+    C("Planejamento das visitas domiciliares",{note:"Roteiro baseado na estratificação de risco e nas necessidades do território"}),
+    "Existe acompanhamento das famílias cadastradas",
+    "Realizam visitas domiciliares",
+    "Informações das visitas registradas corretamente",
+    "Trazem situações de risco e vulnerabilidade do território",
+    "Comunicação entre ACS e demais profissionais",
+    "Participam das reuniões da equipe e da unidade",
+    "Realizam busca ativa",
+    "Participam do planejamento das ações da equipe",
+    "Realizam atividades de grupo ou coletivas",
+    {type:"textarea",k:"s11_obs",label:"Observações"}
+  ]),
+  S("s12","12","Registros e sistemas de informação","Avalie o registro dos atendimentos e a familiaridade com os sistemas (PEC, e-SUS Território, Hórus, SISPMI, entre outros).",[
+    "Atendimentos registrados adequadamente",
+    "Profissionais utilizam os sistemas de informação disponíveis",
+    "Registros realizados de forma regular",
+    "Equipe utiliza informações para acompanhar os usuários",
+    "Dados utilizados no planejamento das ações",
+    C("Equipe familiarizada com os sistemas utilizados",{note:"PEC, e-SUS Território, Hórus, SISPMI etc."}),
+    {type:"textarea",k:"s12_obs",label:"Observações",help:"Inclua dificuldades relacionadas aos sistemas."}
+  ]),
+  S("s13","13","Educação permanente e capacitação","Verifique a participação em capacitações e o uso de protocolos.",[
+    "Equipe participa de capacitações",
+    "São discutidas situações identificadas na prática cotidiana",
+    "Existem momentos de educação permanente na equipe",
+    "Profissionais utilizam protocolos e orientações técnicas",
+    "Necessidades de capacitação da equipe são identificadas",
+    {type:"textarea",k:"s13_nec",label:"Principais necessidades de capacitação identificadas"}
+  ]),
+  S("s14","14","Participação social","Observe a informação aos usuários sobre direitos, a participação da comunidade e o controle social.",[
+    "Usuários recebem informações sobre direitos e serviços disponíveis (ASU)",
+    "Existe participação da comunidade nas ações da unidade",
+    "Existe reunião de comunidade conduzida pela equipe",
+    "Equipes participam de reuniões de condomínio nas áreas de prédio",
+    "A unidade mantém relação com lideranças / comunidade",
+    "Existe participação em espaços de controle social",
+    "Reclamações e sugestões dos usuários são recebidas e consideradas",
+    {type:"textarea",k:"s14_obs",label:"Observações"}
+  ]),
+  S("s15","15","Pontos positivos identificados","Registre os principais aspectos que contribuem para o bom funcionamento da unidade.",[
+    {type:"list",k:"positivos",label:"Pontos positivos"}
+  ]),
+  S("s16","16","Nós críticos e fragilidades","Registre as principais fragilidades que impactam o processo de trabalho e o alcance dos indicadores de qualidade.",[
+    {type:"list",k:"nos",label:"Nós críticos ou fragilidades"}
+  ]),
+  S("s17","17","Recomendações","Para cada nó crítico ou fragilidade, registre uma proposta de melhoria com o responsável técnico pela resolução. Preenchimento integrado posteriormente.",[
+    {type:"recs",k:"recs",label:"Problema · Proposta · Responsáveis"}
+  ]),
+  S("sf","✓","Considerações finais e assinatura","A visita técnica deve considerar não apenas a existência de recursos, mas como a equipe organiza o trabalho, acolhe os usuários, conhece o território, planeja, acompanha a população e se articula com a Rede de Atenção à Saúde.",[
+    {type:"textarea",k:"consid",label:"Considerações finais"},
+    {type:"text",k:"assinatura",label:"Responsável pela visita (assinatura)"},
+    {type:"textarea",k:"contrib",label:"Contribuições de"}
+  ])
+];
+
+/* ============ Utilidades ============ */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDate=d=>{if(!d)return"";const [y,m,dd]=d.split("-");return dd?`${dd}/${m}/${y}`:d};
+const fmtTs=t=>{if(!t)return"";const d=new Date(t);return d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})};
+const VLAB={S:"Sim",P:"Parcial",N:"Não",NA:"N/A"};
+function flat(fields){const o=[];fields.forEach(f=>f.type==="row"?o.push(...f.fields):o.push(f));return o}
+function filled(f,v){
+  if(v==null)return false;
+  switch(f.type){
+    case "check": return !!v;
+    case "list": return Array.isArray(v)&&v.some(x=>String(x||"").trim());
+    case "visits": return Array.isArray(v)&&v.some(x=>x&&x.data);
+    case "recs": return Array.isArray(v)&&v.some(x=>x&&(x.p||x.s||x.r));
+    case "team": return v&&Object.values(v).some(r=>r&&(r.q||r.ch||r.c||r.o));
+    default: return String(v).trim()!=="";
+  }
+}
+function secProgress(sec,a){let t=0,f=0;flat(sec.fields).forEach(x=>{if(x.type==="sub")return;t++;if(filled(x,a[x.k]))f++});return{t,f}}
+function totalProgress(a){let t=0,f=0;SECTIONS.forEach(s=>{const p=secProgress(s,a);t+=p.t;f+=p.f});return t?f/t:0}
+function secScore(sec,a){let n=0,sum=0;flat(sec.fields).forEach(x=>{if(x.type!=="check"||x.neutral)return;const v=a[x.k];if(v==="S"){n++;sum+=1}else if(v==="P"){n++;sum+=.5}else if(v==="N"){n++}});return n?sum/n:null}
+function totalScore(a){let n=0,sum=0;SECTIONS.forEach(s=>flat(s.fields).forEach(x=>{if(x.type!=="check"||x.neutral)return;const v=a[x.k];if(v==="S"){n++;sum+=1}else if(v==="P"){n++;sum+=.5}else if(v==="N"){n++}}));return n?sum/n:null}
+const scoreCls=s=>s==null?"":s>=.75?"g":s>=.5?"m":"b";
+const pct=s=>s==null?"—":Math.round(s*100)+"%";
+function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
+function deepMerge(t,p){for(const k in p){const v=p[k];if(v&&typeof v==="object"&&!Array.isArray(v)){if(!t[k]||typeof t[k]!=="object"||Array.isArray(t[k]))t[k]={};deepMerge(t[k],v)}else t[k]=v}return t}
+
+/* ============ Armazenamento ============ */
+const BASE_SECTIONS=structuredClone(SECTIONS);
+let CFG={labels:{},hidden:{},added:{},secs:{}};
+const normCfg=c=>{c=c||{};return{labels:c.labels||{},hidden:c.hidden||{},added:c.added||{},secs:c.secs||{}}};
+function applyConfig(c){
+  CFG=normCfg(structuredClone(c||{}));
+  const out=BASE_SECTIONS.map(b=>{
+    const s=structuredClone(b),o=CFG.secs[s.id]||{};
+    if(o.title&&o.title.trim())s.title=o.title.trim();
+    if(o.guide&&o.guide.trim())s.guide=o.guide.trim();
+    const rl=f=>{if(f.type==="row"){f.fields.forEach(rl);return}if(f.k&&CFG.labels[f.k])f.label=CFG.labels[f.k]};
+    s.fields.forEach(rl);
+    s.fields=s.fields.filter(f=>!(f.type==="check"&&CFG.hidden[f.k]));
+    const add=(CFG.added[s.id]||[]).filter(x=>x&&x.label&&x.label.trim()).map(x=>({type:"check",k:x.k,label:x.label.trim()}));
+    if(add.length){let idx=-1;s.fields.forEach((f,i)=>{if(f.type==="check")idx=i});s.fields.splice(idx<0?s.fields.length:idx+1,0,...add)}
+    return s;
+  });
+  SECTIONS.length=0;SECTIONS.push(...out);
+}
+const SUPABASE_URL="https://zfyorexdmszzvsvlyhbi.supabase.co";
+const SUPABASE_KEY="sb_publishable_oFS_eRmkAu5xQCHD5wRVkw_S-hVqnmH"; // chave publicável (segura no front-end; o acesso é protegido por RLS)
+let sb=null;
+const rowTo=r=>({id:r.id,a:r.a||{},status:r.status,createdBy:r.created_by,createdAt:r.created_at,updatedAt:r.updated_at,updatedBy:r.updated_by,editors:r.editors||{}});
+const dbErr=e=>{if(e&&(e.code==="42501"||e.code==="PGRST301"||e.status===401||e.status===403))return{code:"invalid_argument",message:e.message};return e};
+const Store={
+  db:false,mem:new Map(),memSubs:new Set(),
+  notify(){this.memSubs.forEach(f=>f())},
+  subscribeList(cb,err){
+    if(this.db){
+      let dead=false,t=null;
+      const load=async()=>{const{data,error}=await sb.from("visitas").select("*").order("updated_at",{ascending:false});if(dead)return;if(error){err&&err(error);return}cb(data.map(rowTo))};
+      load();
+      const ch=sb.channel("visitas-list").on("postgres_changes",{event:"*",schema:"public",table:"visitas"},()=>{clearTimeout(t);t=setTimeout(load,300)}).subscribe();
+      return()=>{dead=true;clearTimeout(t);sb.removeChannel(ch)};
+    }
+    const f=()=>cb([...this.mem.values()].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)));this.memSubs.add(f);f();return()=>this.memSubs.delete(f);
+  },
+  subscribeDoc(id,cb,err){
+    if(this.db){
+      let dead=false;
+      (async()=>{const{data,error}=await sb.from("visitas").select("*").eq("id",id).maybeSingle();if(dead)return;if(error){err&&err(error);return}cb(data?rowTo(data):null,{hasPendingWrites:false})})();
+      const ch=sb.channel("visita-"+id).on("postgres_changes",{event:"*",schema:"public",table:"visitas",filter:"id=eq."+id},p=>{if(dead)return;if(p.eventType==="DELETE")cb(null,{});else cb(rowTo(p.new),{hasPendingWrites:false})}).subscribe();
+      return()=>{dead=true;sb.removeChannel(ch)};
+    }
+    const f=()=>cb(this.mem.get(id)?structuredClone(this.mem.get(id)):null,{hasPendingWrites:false});this.memSubs.add(f);f();return()=>this.memSubs.delete(f);
+  },
+  async create(data){
+    if(this.db){
+      const{data:r,error}=await sb.from("visitas").insert({a:data.a,status:data.status,created_by:data.createdBy,created_at:data.createdAt,updated_at:data.updatedAt,updated_by:data.updatedBy,editors:data.editors}).select("id").single();
+      if(error)throw dbErr(error);return r.id;
+    }
+    const id="local"+Date.now();this.mem.set(id,{id,...structuredClone(data)});this.notify();return id;
+  },
+  async update(id,patch){
+    if(this.db){
+      const{error}=await sb.rpc("patch_visita",{p_id:id,p_a:patch.a||null,p_status:patch.status||null});
+      if(error)throw dbErr(error);return;
+    }
+    const d=this.mem.get(id);if(d){deepMerge(d,structuredClone(patch));this.notify()}
+  },
+  memCfg:{},
+  async loadConfig(){
+    if(this.db){const{data,error}=await sb.from("roteiro_config").select("config").eq("id",1).maybeSingle();if(error)throw error;return(data&&data.config)||{}}
+    return structuredClone(this.memCfg);
+  },
+  async saveConfig(c){
+    if(this.db){const{error}=await sb.from("roteiro_config").upsert({id:1,config:c,updated_at:Date.now(),updated_by:st.uid});if(error)throw dbErr(error);return}
+    this.memCfg=structuredClone(c);
+  },
+  subscribeConfig(cb){
+    if(!this.db)return()=>{};
+    const ch=sb.channel("roteiro-cfg").on("postgres_changes",{event:"*",schema:"public",table:"roteiro_config"},p=>{if(p.new&&p.new.config)cb(p.new.config)}).subscribe();
+    return()=>sb.removeChannel(ch);
+  },
+  async remove(id){
+    if(this.db){const{error}=await sb.from("visitas").delete().eq("id",id);if(error)throw dbErr(error);return}
+    this.mem.delete(id);this.notify()
+  }
+};
+
+/* ============ Estado ============ */
+const st={user:null,uid:null,canWrite:true,downloads:null,visits:[],unsubList:null,view:"list",
+  cur:null,curId:null,unsubDoc:null,sec:0,pending:{},inflight:new Set(),saving:false,saveTimer:null,lastSaved:null,editorMarked:false,filter:{q:"",status:""},confirmDel:false};
+
+function setSave(state,txt){const el=$("#saveState");el.hidden=st.view!=="form";$("#saveDot").className="dot "+state;$("#saveTxt").textContent=txt}
+
+const nameCache={};
+async function names(ids){
+  ids=[...new Set(ids.filter(Boolean))];if(!Store.db||!ids.length)return{};
+  const miss=ids.filter(i=>!nameCache[i]);
+  if(miss.length){try{const{data}=await sb.from("profiles").select("id,name").in("id",miss);(data||[]).forEach(p=>nameCache[p.id]={name:p.name})}catch{}}
+  const out={};ids.forEach(i=>{if(nameCache[i])out[i]=nameCache[i]});return out;
+}
+
+/* ============ Lista ============ */
+function startList(){
+  if(st.unsubList)return;
+  st.unsubList=Store.subscribeList(v=>{st.visits=v;if(st.view==="list")renderList()},e=>{toast("Não foi possível carregar as visitas. Recarregue a página.")});
+}
+async function renderList(){
+  const app=$("#app");$("#saveState").hidden=true;
+  const q=st.filter.q.trim().toLowerCase();
+  const rows=st.visits.filter(v=>{const a=v.a||{};if(st.filter.status&&v.status!==st.filter.status)return false;if(q&&!((a.unidade||"")+" "+(a.responsaveis||"")).toLowerCase().includes(q))return false;return true});
+  const done=st.visits.filter(v=>v.status==="concluida").length;
+  const scores=st.visits.map(v=>totalScore(v.a||{})).filter(s=>s!=null);
+  const avg=scores.length?scores.reduce((x,y)=>x+y,0)/scores.length:null;
+  const ps=await names(rows.map(v=>v.updatedBy));
+  app.innerHTML=`
+  ${!Store.db?`<div class="banner"><b>Modo sem salvamento.</b> Este link não está conectado ao banco compartilhado, então as visitas ficam só nesta janela. Você ainda pode preencher e baixar o relatório.</div>`:""}
+  ${!st.canWrite?`<div class="banner">Você tem acesso somente leitura. Peça ao responsável acesso de <b>Colaborador</b> para registrar visitas.</div>`:""}
+  <div class="list-head">
+    <div><h1>Visitas técnicas</h1><p>Roteiro de avaliação do funcionamento da USF: estrutura, processo de trabalho, acolhimento, território e cuidado. Evite conclusões baseadas em um único dia de observação.</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${st.canWrite?`<button class="btn" id="cfgBtn">Editar roteiro</button>`:""}
+      ${st.visits.length?`<button class="btn" id="csvBtn">Exportar planilha (.csv)</button>`:""}
+      ${st.canWrite?`<button class="btn primary" id="newBtn">+ Nova visita</button>`:""}
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>${st.visits.length}</b><span>Visitas registradas</span></div>
+    <div class="stat"><b>${st.visits.length-done}</b><span>Em preenchimento</span></div>
+    <div class="stat"><b>${done}</b><span>Concluídas</span></div>
+    <div class="stat"><b class="score ${scoreCls(avg)}">${pct(avg)}</b><span>Conformidade média</span></div>
+  </div>
+  <div class="filters">
+    <input type="text" id="fq" placeholder="Buscar por unidade ou responsável" value="${esc(st.filter.q)}">
+    <select id="fs"><option value="">Todos os status</option><option value="rascunho"${st.filter.status==="rascunho"?" selected":""}>Em preenchimento</option><option value="concluida"${st.filter.status==="concluida"?" selected":""}>Concluídas</option></select>
+  </div>
+  <div class="vtable-wrap">
+  ${rows.length?`<table class="vt"><thead><tr><th>Unidade</th><th>Visita</th><th>Status</th><th style="width:150px">Preenchimento</th><th>Conformidade</th><th>Última edição</th></tr></thead><tbody>
+  ${rows.map(v=>{const a=v.a||{};const p=totalProgress(a);const s=totalScore(a);const ds=(a.visitas||[]).filter(x=>x&&x.data).map(x=>fmtDate(x.data));
+    return `<tr data-id="${esc(v.id)}"><td><div class="u-name">${esc(a.unidade||"Unidade sem nome")}</div><div class="u-sub">${a.n_esf?esc(a.n_esf)+" eSF":"—"}</div></td>
+    <td class="num">${ds.length?esc(ds.join(", ")):"<span class='muted'>sem data</span>"}</td>
+    <td><span class="pill ${v.status==="concluida"?"done":"draft"}">${v.status==="concluida"?"Concluída":"Rascunho"}</span></td>
+    <td><div style="display:flex;align-items:center;gap:8px"><div class="bar"><i style="width:${Math.round(p*100)}%"></i></div><span class="num" style="font-size:13px">${Math.round(p*100)}%</span></div></td>
+    <td><span class="score ${scoreCls(s)}">${pct(s)}</span></td>
+    <td><div style="font-size:14px">${esc((ps[v.updatedBy]&&ps[v.updatedBy].name)||"—")}</div><div class="u-sub num">${fmtTs(v.updatedAt)}</div></td></tr>`}).join("")}
+  </tbody></table>`:`<div class="empty"><h3>${st.visits.length?"Nenhuma visita encontrada":"Nenhuma visita registrada ainda"}</h3><p>${st.visits.length?"Ajuste a busca ou o filtro de status.":st.canWrite?"Clique em <b>+ Nova visita</b> para iniciar o roteiro de uma unidade. O preenchimento é salvo automaticamente e pode ser continuado por outros membros da equipe.":"As visitas registradas pelas equipes aparecerão aqui."}</p></div>`}
+  </div>`;
+  const fq=$("#fq");fq.oninput=()=>{st.filter.q=fq.value;clearTimeout(fq._t);fq._t=setTimeout(()=>{renderList().then(()=>{const n=$("#fq");n.focus();n.setSelectionRange(n.value.length,n.value.length)})},250)};
+  $("#fs").onchange=e=>{st.filter.status=e.target.value;renderList()};
+  $("#newBtn")&&($("#newBtn").onclick=newVisit);
+  $("#csvBtn")&&($("#csvBtn").onclick=exportCSV);
+  $("#cfgBtn")&&($("#cfgBtn").onclick=openRoteiro);
+  app.querySelectorAll("tr[data-id]").forEach(tr=>tr.onclick=()=>openVisit(tr.dataset.id,"form"));
+}
+
+async function newVisit(){
+  const now=Date.now();
+  const data={a:{visitas:[{data:new Date().toISOString().slice(0,10),inicio:"",fim:""}]},status:"rascunho",createdBy:st.uid,createdAt:now,updatedAt:now,updatedBy:st.uid,editors:st.uid?{[st.uid]:true}:{}};
+  try{const id=await Store.create(data);openVisit(id,"form")}
+  catch(e){toast(e&&e.code==="quota_exceeded"?"O banco de visitas está cheio. Exclua visitas antigas para criar novas.":"Não foi possível criar a visita. Verifique se você tem permissão de Colaborador.")}
+}
+
+/* ============ Formulário ============ */
+function openVisit(id,view){
+  closeDoc();
+  st.curId=id;st.cur=null;st.view=view;st.sec=0;st.pending={};st.editorMarked=false;st.confirmDel=false;
+  $("#app").innerHTML=`<div class="empty"><h3>Abrindo visita…</h3></div>`;
+  let first=true;
+  st.unsubDoc=Store.subscribeDoc(id,(d,meta)=>{
+    if(!d){if(!first||!st.cur){toast("Esta visita foi excluída.");goList()}return}
+    if(first||!st.cur){first=false;st.cur=structuredClone(d);st.cur.a=st.cur.a||{};render();return}
+    if(meta&&meta.hasPendingWrites)return;
+    const ra=d.a||{};const changed=[];
+    for(const k in ra){if(k in st.pending||st.inflight.has(k))continue;if(JSON.stringify(ra[k])!==JSON.stringify(st.cur.a[k])){st.cur.a[k]=structuredClone(ra[k]);changed.push(k)}}
+    const statusChanged=d.status!==st.cur.status;
+    st.cur.status=d.status;st.cur.updatedAt=d.updatedAt;st.cur.updatedBy=d.updatedBy;st.cur.editors=d.editors;
+    if(st.view==="form"){if(statusChanged)render();else{changed.forEach(refreshField);updateNav()}}
+    else if(st.view==="report"&&(changed.length||statusChanged))render();
+  },()=>toast("A conexão com esta visita foi interrompida. Recarregue a página."));
+}
+function closeDoc(){if(st.unsubDoc){st.unsubDoc();st.unsubDoc=null}}
+async function goList(){await flushSave();closeDoc();st.view="list";st.cur=null;st.curId=null;renderList();window.scrollTo(0,0)}
+
+function render(){if(st.view==="form")renderForm();else if(st.view==="report")renderReport();else if(st.view==="roteiro")renderRoteiro()}
+
+function locked(){return st.cur.status==="concluida"||!st.canWrite}
+
+function renderForm(){
+  const a=st.cur.a;const sec=SECTIONS[st.sec];const lk=locked();
+  setSave(st.lastSaved?"ok":"",st.lastSaved?"Salvo":"Salvamento automático");
+  $("#app").innerHTML=`
+  ${st.confirmDel?`<div class="confirm"><span>Excluir esta visita para todas as equipes? Não é possível desfazer.</span><button class="btn sm danger" id="delYes">Excluir visita</button><button class="btn sm" id="delNo">Cancelar</button></div>`:""}
+  <div class="form-top">
+    <button class="btn ghost" id="backBtn">← Visitas</button>
+    <h1 id="ftitle">${esc(a.unidade||"Nova visita")}</h1>
+    <span class="pill ${st.cur.status==="concluida"?"done":"draft"}">${st.cur.status==="concluida"?"Concluída":"Rascunho"}</span>
+    <button class="btn" id="repBtn">Ver relatório</button>
+    ${st.canWrite?(st.cur.status==="concluida"?`<button class="btn" id="reopenBtn">Reabrir para edição</button>`:`<button class="btn primary" id="doneBtn">Concluir visita</button>`):""}
+    ${st.canWrite?`<button class="btn ghost danger" id="delBtn" title="Excluir visita">Excluir</button>`:""}
+  </div>
+  ${st.cur.status==="concluida"?`<div class="banner">Visita concluída. Para alterar, clique em <b>Reabrir para edição</b>.</div>`:""}
+  <div class="msel"><select id="msel" aria-label="Seção">${SECTIONS.map((s,i)=>`<option value="${i}"${i===st.sec?" selected":""}>${esc(s.n)}. ${esc(s.title)}</option>`).join("")}</select></div>
+  <div class="grid">
+    <nav class="snav" id="snav" aria-label="Seções do roteiro"></nav>
+    <section class="sec ${lk?"locked":""}" id="sec">
+      <div class="sec-h"><span class="n">${esc(sec.n)}</span><h2>${esc(sec.title)}</h2></div>
+      <p class="guide">${esc(sec.guide)}</p>
+      <div id="secScore"></div>
+      <div class="fields" id="fields"></div>
+      <div class="secnav-bottom">
+        <button class="btn" id="prevBtn" ${st.sec===0?"disabled":""}>← Anterior</button>
+        ${st.sec<SECTIONS.length-1?`<button class="btn primary" id="nextBtn">Próxima: ${esc(SECTIONS[st.sec+1].title)} →</button>`:`<button class="btn primary" id="endRep">Ver relatório</button>`}
+      </div>
+    </section>
+  </div>`;
+  const box=$("#fields");
+  let grp=null;
+  sec.fields.forEach(f=>{
+    if(f.type==="check"){if(!grp){grp=document.createElement("div");grp.className="checks";box.appendChild(grp)}grp.appendChild(renderField(f))}
+    else{grp=null;box.appendChild(renderField(f))}
+  });
+  updateNav();
+  $("#backBtn").onclick=goList;
+  $("#repBtn").onclick=async()=>{await flushSave();st.view="report";render();window.scrollTo(0,0)};
+  $("#endRep")&&($("#endRep").onclick=$("#repBtn").onclick);
+  $("#doneBtn")&&($("#doneBtn").onclick=()=>setStatus("concluida"));
+  $("#reopenBtn")&&($("#reopenBtn").onclick=()=>setStatus("rascunho"));
+  $("#delBtn")&&($("#delBtn").onclick=()=>{st.confirmDel=true;renderForm();window.scrollTo(0,0)});
+  $("#delYes")&&($("#delYes").onclick=async()=>{const id=st.curId;closeDoc();try{await Store.remove(id);toast("Visita excluída.")}catch{toast("Não foi possível excluir a visita.")}st.view="list";st.cur=null;renderList()});
+  $("#delNo")&&($("#delNo").onclick=()=>{st.confirmDel=false;renderForm()});
+  $("#prevBtn").onclick=()=>goSec(st.sec-1);
+  $("#nextBtn")&&($("#nextBtn").onclick=()=>goSec(st.sec+1));
+  $("#msel").onchange=e=>goSec(+e.target.value);
+}
+function goSec(i){if(i<0||i>=SECTIONS.length)return;st.sec=i;renderForm();const t=$("#sec");if(t&&t.getBoundingClientRect().top<0)window.scrollTo({top:window.scrollY+t.getBoundingClientRect().top-80})}
+
+function updateNav(){
+  const a=st.cur.a;const nav=$("#snav");if(!nav)return;
+  const p=totalProgress(a);
+  nav.innerHTML=`<div class="snav-p"><small><span>Preenchimento</span><span class="num">${Math.round(p*100)}%</span></small><div class="bar"><i style="width:${Math.round(p*100)}%"></i></div></div>`+
+  SECTIONS.map((s,i)=>{const pr=secProgress(s,a);return `<button data-i="${i}" class="${i===st.sec?"on":""}"><span class="n">${esc(s.n)}</span><span>${esc(s.title)}</span><span class="c ${pr.f===pr.t?"full":""}">${pr.f}/${pr.t}</span></button>`}).join("");
+  nav.querySelectorAll("button").forEach(b=>b.onclick=()=>goSec(+b.dataset.i));
+  const sec=SECTIONS[st.sec];const sc=secScore(sec,a);const ss=$("#secScore");
+  if(ss)ss.innerHTML=flat(sec.fields).some(f=>f.type==="check")?`<div class="sec-score"><span>Conformidade da seção</span><span class="score ${scoreCls(sc)}">${pct(sc)}</span><span>· Sim = 1, Parcial = 0,5, Não = 0; N/A não conta</span></div>`:"";
+  const ms=$("#msel");if(ms)[...ms.options].forEach((o,i)=>{const pr=secProgress(SECTIONS[i],a);o.textContent=`${SECTIONS[i].n}. ${SECTIONS[i].title} (${pr.f}/${pr.t})`});
+  const ft=$("#ftitle");if(ft&&!ft.contains(document.activeElement))ft.textContent=a.unidade||"Nova visita";
+}
+
+function refreshField(k){
+  const el=document.querySelector(`[data-field="${CSS.escape(k)}"]`);
+  if(!el||el.contains(document.activeElement))return;
+  const f=findField(k);if(f)el.replaceWith(renderField(f));
+}
+function findField(k){for(const s of SECTIONS)for(const f of flat(s.fields))if(f.k===k)return f;return null}
+
+function setVal(k,v){st.cur.a[k]=v;st.pending[k]=v;scheduleSave();updateNav()}
+function scheduleSave(){clearTimeout(st.saveTimer);setSave("busy","Alterações não salvas");st.saveTimer=setTimeout(doSave,700)}
+async function doSave(){
+  if(st.saving){st.saveAgain=true;return}
+  const keys=Object.keys(st.pending);if(!keys.length)return;
+  const patch={a:{...st.pending},updatedAt:Date.now(),updatedBy:st.uid};
+  if(!st.editorMarked&&st.uid)patch.editors={[st.uid]:true};
+  keys.forEach(k=>st.inflight.add(k));st.pending={};st.saving=true;setSave("busy","Salvando…");
+  try{await Store.update(st.curId,patch);st.editorMarked=true;st.lastSaved=Date.now();setSave("ok","Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}))}
+  catch(e){for(const k of keys)if(!(k in st.pending))st.pending[k]=patch.a[k];setSave("err","Não salvo — tentando de novo");
+    if(e&&e.code==="invalid_argument"){st.canWrite=false;setSave("err","Sem permissão para salvar");toast("Você não tem permissão para editar esta visita.");}
+    else setTimeout(scheduleSave,2500)}
+  finally{keys.forEach(k=>st.inflight.delete(k));st.saving=false;if(st.saveAgain){st.saveAgain=false;doSave()}}
+}
+async function flushSave(){clearTimeout(st.saveTimer);if(Object.keys(st.pending).length)await doSave();let n=0;while(st.saving&&n++<50)await new Promise(r=>setTimeout(r,100))}
+async function setStatus(s){
+  await flushSave();
+  if(s==="concluida"&&!(st.cur.a.unidade||"").trim()){goSec(0);toast("Informe o nome da Unidade de Saúde antes de concluir.");return}
+  try{await Store.update(st.curId,{status:s,updatedAt:Date.now(),updatedBy:st.uid});st.cur.status=s;renderForm();toast(s==="concluida"?"Visita concluída.":"Visita reaberta para edição.")}
+  catch{toast("Não foi possível alterar o status.")}
+}
+
+function autosize(t){t.style.height="auto";t.style.height=Math.max(t.scrollHeight+2,60)+"px"}
+
+function renderField(f){
+  const a=st.cur.a;const w=document.createElement("div");
+  if(f.type==="sub"){w.className="sub";w.textContent=f.label;return w}
+  if(f.type==="row"){w.className="two";f.fields.forEach(x=>w.appendChild(renderField(x)));return w}
+  w.className="f";w.dataset.field=f.k;
+  const id="fld_"+f.k;const v=a[f.k];
+  const help=f.help?`<div class="h">${esc(f.help)}</div>`:"";
+  if(f.type==="text"||f.type==="number"){
+    w.innerHTML=`<label class="l" for="${id}">${esc(f.label)}${f.req?" *":""}</label>${help}<input id="${id}" type="${f.type==="number"?"number":"text"}" ${f.type==="number"?'min="0" inputmode="numeric"':""} value="${esc(v||"")}">`;
+    const i=w.querySelector("input");i.oninput=()=>setVal(f.k,i.value);
+  } else if(f.type==="textarea"){
+    w.innerHTML=`<label class="l" for="${id}">${esc(f.label)}</label>${help}<textarea id="${id}">${esc(v||"")}</textarea>`;
+    const t=w.querySelector("textarea");t.oninput=()=>{autosize(t);setVal(f.k,t.value)};requestAnimationFrame(()=>autosize(t));
+  } else if(f.type==="check"){
+    w.className="checks-item";
+    w.innerHTML=`<div class="ck"><div class="t">${esc(f.label)}${f.note?`<em>${esc(f.note)}</em>`:""}</div><div class="tri" role="group" aria-label="${esc(f.label)}">${["S","P","N","NA"].map(x=>`<button type="button" data-v="${x}" aria-pressed="${v===x}">${VLAB[x]}</button>`).join("")}</div></div>`;
+    w.querySelectorAll("button").forEach(b=>b.onclick=()=>{const nv=st.cur.a[f.k]===b.dataset.v?"":b.dataset.v;setVal(f.k,nv);w.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===nv)))});
+  } else if(f.type==="visits"){
+    const rows=Array.isArray(v)&&v.length?structuredClone(v):[{data:"",inicio:"",fim:""}];
+    w.innerHTML=`<div class="l">${esc(f.label)}</div>${help}<div class="vlist"></div><button type="button" class="btn sm addbtn">+ Adicionar data</button>`;
+    const box=w.querySelector(".vlist");
+    const draw=()=>{box.innerHTML=`<div class="vrow muted" style="font-size:13px"><span>Data</span><span>Início</span><span>Término</span><span></span></div>`+rows.map((r,i)=>`<div class="vrow" data-i="${i}"><input type="date" aria-label="Data" value="${esc(r.data)}" data-p="data"><input type="time" aria-label="Início" value="${esc(r.inicio)}" data-p="inicio"><input type="time" aria-label="Término" value="${esc(r.fim)}" data-p="fim"><button type="button" class="x" aria-label="Remover data">×</button></div>`).join("");
+      box.querySelectorAll(".vrow[data-i]").forEach(row=>{const i=+row.dataset.i;row.querySelectorAll("input").forEach(inp=>inp.oninput=()=>{rows[i][inp.dataset.p]=inp.value;setVal(f.k,structuredClone(rows))});row.querySelector(".x").onclick=()=>{rows.splice(i,1);if(!rows.length)rows.push({data:"",inicio:"",fim:""});draw();setVal(f.k,structuredClone(rows))}})};
+    draw();w.querySelector(".addbtn").onclick=()=>{rows.push({data:"",inicio:"",fim:""});draw();setVal(f.k,structuredClone(rows))};
+  } else if(f.type==="team"){
+    const t=v&&typeof v==="object"?structuredClone(v):{};
+    w.innerHTML=`<div class="l">${esc(f.label)}</div><div class="h">Observações: inclua afastamentos no último ano (licença médica, prêmio, férias etc.) e, se quiser, o perfil do profissional.</div>
+    <div class="tbl-wrap"><table class="ft"><thead><tr><th>Profissional</th><th class="w-n">Qtd.</th><th class="w-n">CH (h/sem)</th><th class="w-c">Cumpre a CH?</th><th>Observações*</th></tr></thead><tbody>
+    ${PROFS.map((p,i)=>{const r=t[i]||{};return `<tr data-i="${i}"><td class="pn">${esc(p)}</td><td><input type="number" min="0" aria-label="Quantidade ${esc(p)}" data-p="q" value="${esc(r.q||"")}"></td><td><input type="text" aria-label="Carga horária ${esc(p)}" data-p="ch" value="${esc(r.ch||"")}"></td><td><select data-p="c" aria-label="Cumprimento da CH ${esc(p)}"><option value=""></option>${["S","P","N","NA"].map(x=>`<option value="${x}"${r.c===x?" selected":""}>${VLAB[x]}</option>`).join("")}</select></td><td><textarea data-p="o" rows="1" aria-label="Observações ${esc(p)}">${esc(r.o||"")}</textarea></td></tr>`}).join("")}
+    </tbody></table></div>`;
+    w.querySelectorAll("tr[data-i]").forEach(tr=>{const i=tr.dataset.i;tr.querySelectorAll("[data-p]").forEach(el=>{const h=()=>{t[i]=t[i]||{};t[i][el.dataset.p]=el.value;setVal(f.k,structuredClone(t))};el.oninput=h;el.onchange=h})});
+  } else if(f.type==="list"){
+    const items=Array.isArray(v)?structuredClone(v):[];while(items.length<4)items.push("");
+    w.innerHTML=`<div class="l">${esc(f.label)}</div><div class="litems"></div><button type="button" class="btn sm addbtn">+ Adicionar item</button>`;
+    const box=w.querySelector(".litems");
+    const draw=()=>{box.innerHTML=items.map((x,i)=>`<div class="lrow"><span class="i">${i+1}.</span><textarea rows="2" aria-label="Item ${i+1}">${esc(x)}</textarea><button type="button" class="x" aria-label="Remover item ${i+1}">×</button></div>`).join("");
+      box.querySelectorAll(".lrow").forEach((row,i)=>{const ta=row.querySelector("textarea");ta.style.minHeight="44px";ta.oninput=()=>{items[i]=ta.value;setVal(f.k,[...items])};row.querySelector(".x").onclick=()=>{items.splice(i,1);draw();setVal(f.k,[...items])}})};
+    draw();w.querySelector(".addbtn").onclick=()=>{items.push("");draw();setVal(f.k,[...items]);const all=box.querySelectorAll("textarea");all[all.length-1].focus()};
+  } else if(f.type==="recs"){
+    const rows=Array.isArray(v)&&v.length?structuredClone(v):[{p:"",s:"",r:""},{p:"",s:"",r:""},{p:"",s:"",r:""},{p:"",s:"",r:""}];
+    w.innerHTML=`<div class="l">${esc(f.label)}</div><div class="h">Cada linha liga um problema identificado a uma proposta de melhoria e aos responsáveis pela resolução.</div>
+      <div style="margin-bottom:10px"><button type="button" class="btn sm addbtn" id="pullNos">Trazer nós críticos da seção 16</button></div>
+      <div class="tbl-wrap"><table class="ft"><thead><tr><th>Problema identificado</th><th>Proposta</th><th style="width:200px">Responsáveis</th><th style="width:40px"></th></tr></thead><tbody></tbody></table></div>
+      <div style="margin-top:10px"><button type="button" class="btn sm addbtn" id="addRec">+ Adicionar linha</button></div>`;
+    const tb=w.querySelector("tbody");
+    const draw=()=>{tb.innerHTML=rows.map((r,i)=>`<tr data-i="${i}"><td><textarea data-p="p" rows="2" aria-label="Problema ${i+1}">${esc(r.p)}</textarea></td><td><textarea data-p="s" rows="2" aria-label="Proposta ${i+1}">${esc(r.s)}</textarea></td><td><textarea data-p="r" rows="2" aria-label="Responsáveis ${i+1}">${esc(r.r)}</textarea></td><td><button type="button" class="x" aria-label="Remover linha ${i+1}">×</button></td></tr>`).join("");
+      tb.querySelectorAll("tr").forEach(tr=>{const i=+tr.dataset.i;tr.querySelectorAll("textarea").forEach(ta=>ta.oninput=()=>{rows[i][ta.dataset.p]=ta.value;setVal(f.k,structuredClone(rows))});tr.querySelector(".x").onclick=()=>{rows.splice(i,1);draw();setVal(f.k,structuredClone(rows))}})};
+    draw();
+    w.querySelector("#addRec").onclick=()=>{rows.push({p:"",s:"",r:""});draw();setVal(f.k,structuredClone(rows))};
+    w.querySelector("#pullNos").onclick=()=>{const nos=(st.cur.a.nos||[]).map(x=>String(x||"").trim()).filter(Boolean);if(!nos.length){toast("A seção 16 ainda não tem nós críticos registrados.");return}
+      const have=new Set(rows.map(r=>r.p.trim()));let added=0;
+      nos.forEach(n=>{if(have.has(n))return;const empty=rows.find(r=>!r.p&&!r.s&&!r.r);if(empty)empty.p=n;else rows.push({p:n,s:"",r:""});added++});
+      draw();setVal(f.k,structuredClone(rows));toast(added?`${added} nó(s) crítico(s) adicionado(s).`:"Todos os nós críticos já estão na tabela.")};
+  }
+  return w;
+}
+
+/* ============ Relatório ============ */
+function reportBody(d,nm){
+  const a=d.a||{};const vis=(a.visitas||[]).filter(x=>x&&x.data);
+  const ck=v=>`<b class="v-${v||""}">${v?VLAB[v]:"—"}</b>`;
+  const txt=t=>t&&String(t).trim()?`<p>${esc(t).replace(/\n/g,"<br>")}</p>`:`<p class="muted">Não preenchido</p>`;
+  let h=`<h1>Relatório de visita técnica — ${esc(a.unidade||"Unidade sem nome")}</h1>
+  <p class="muted">Status: ${d.status==="concluida"?"Concluída":"Em preenchimento"} · Última edição: ${esc(fmtTs(d.updatedAt))}${nm?` por ${esc(nm)}`:""}</p>`;
+  // Resumo
+  const ts=totalScore(a);
+  h+=`<h2>Resumo de conformidade</h2><p>Índice geral: <b class="score ${scoreCls(ts)}">${pct(ts)}</b> <span class="muted">(Sim = 1, Parcial = 0,5, Não = 0; N/A não conta)</span></p>`;
+  SECTIONS.forEach(s=>{const sc=secScore(s,a);if(!flat(s.fields).some(f=>f.type==="check"))return;
+    h+=`<div class="r-sum"><span>${esc(s.n)}. ${esc(s.title)}</span><div class="bar"><i style="width:${sc==null?0:Math.round(sc*100)}%;background:${sc==null?"transparent":sc>=.75?"var(--ok)":sc>=.5?"var(--warn)":"var(--bad)"}"></i></div><span class="score ${scoreCls(sc)}" style="text-align:right">${pct(sc)}</span></div>`});
+  SECTIONS.forEach(s=>{
+    h+=`<h2>${esc(s.n)}. ${esc(s.title)}</h2>`;
+    if(s.id==="s1"){
+      h+=`<dl class="kv"><dt>Unidade de Saúde</dt><dd>${esc(a.unidade||"—")}</dd><dt>Nº de eSF</dt><dd>${esc(a.n_esf||"—")}</dd><dt>População / território / cadastros</dt><dd>${esc(a.populacao||"—")}</dd><dt>Nº de atendimentos</dt><dd>${esc(a.n_atend||"—")}</dd>
+      <dt>Indicadores de qualidade (AlumIA)</dt><dd>${esc(a.indicadores||"—").replace(/\n/g,"<br>")}</dd><dt>Avaliação do acolhimento</dt><dd>${esc(a.acolh_result||"—").replace(/\n/g,"<br>")}</dd>
+      <dt>Datas e horários</dt><dd>${vis.length?vis.map(x=>`${esc(fmtDate(x.data))}${x.inicio?` · ${esc(x.inicio)}`:""}${x.fim?`–${esc(x.fim)}`:""}`).join("<br>"):"—"}</dd>
+      <dt>Responsáveis pela visita</dt><dd>${esc(a.responsaveis||"—").replace(/\n/g,"<br>")}</dd></dl>`;
+      return;
+    }
+    s.fields.forEach(f=>{
+      if(f.type==="sub"){h+=`<h3>${esc(f.label)}</h3>`;return}
+      if(f.type==="check"){h+=`<div class="r-ck"><span>${esc(f.label)}</span>${ck(a[f.k])}</div>`;return}
+      if(f.type==="textarea"||f.type==="text"){h+=`<h3>${esc(f.label)}</h3>${txt(a[f.k])}`;return}
+      if(f.type==="team"){const t=a[f.k]||{};h+=`<div class="tw"><table><thead><tr><th>Profissional</th><th>Qtd.</th><th>CH</th><th>Cumpre CH</th><th>Observações</th></tr></thead><tbody>${PROFS.map((p,i)=>{const r=t[i]||{};return `<tr><td>${esc(p)}</td><td>${esc(r.q||"")}</td><td>${esc(r.ch||"")}</td><td class="v-${r.c||""}">${r.c?VLAB[r.c]:""}</td><td>${esc(r.o||"").replace(/\n/g,"<br>")}</td></tr>`}).join("")}</tbody></table></div>`;return}
+      if(f.type==="list"){const it=(a[f.k]||[]).map(x=>String(x||"").trim()).filter(Boolean);h+=it.length?`<ol>${it.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:`<p class="muted">Não preenchido</p>`;return}
+      if(f.type==="recs"){const r=(a[f.k]||[]).filter(x=>x&&(x.p||x.s||x.r));h+=r.length?`<div class="tw"><table><thead><tr><th>Problema identificado</th><th>Proposta</th><th>Responsáveis</th></tr></thead><tbody>${r.map(x=>`<tr><td>${esc(x.p)}</td><td>${esc(x.s)}</td><td>${esc(x.r)}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted">Não preenchido</p>`;return}
+    });
+  });
+  return h;
+}
+async function renderReport(){
+  const d=st.cur;const ps=await names([d.updatedBy]);const nm=ps[d.updatedBy]&&ps[d.updatedBy].name;
+  $("#saveState").hidden=true;
+  $("#app").innerHTML=`<div class="form-top" style="max-width:900px;margin:0 auto 16px">
+    <button class="btn ghost" id="backBtn">← Visitas</button><h1></h1>
+    <button class="btn" id="pdfBtn">Baixar PDF</button>
+    <button class="btn" id="docBtn">Baixar Word (.docx)</button>
+    ${st.downloads?`<button class="btn" id="dlBtn">Baixar relatório (.html)</button>`:""}
+    <button class="btn primary" id="editBtn">${locked()?"Ver formulário":"Continuar preenchendo"}</button></div>
+    <article class="report">${reportBody(d,nm)}</article>`;
+  $("#backBtn").onclick=goList;
+  $("#editBtn").onclick=()=>{st.view="form";render();window.scrollTo(0,0)};
+  $("#dlBtn")&&($("#dlBtn").onclick=()=>downloadReport(d,nm));
+  $("#pdfBtn").onclick=()=>downloadPDF(d,nm);
+  $("#docBtn").onclick=()=>downloadDocx(d,nm);
+}
+const REPORT_CSS=`body{font-family:"Segoe UI",Arial,sans-serif;color:#14221E;max-width:860px;margin:32px auto;padding:0 20px;line-height:1.5;font-size:15px}h1{font-size:22px}h2{font-size:16px;margin:24px 0 8px;padding-bottom:4px;border-bottom:1px solid #ccd8d4;color:#0D6A56}h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#596A65;margin:12px 0 4px}p{margin:4px 0}.muted{color:#7B8884}.kv{display:grid;grid-template-columns:240px 1fr;gap:4px 16px}.kv dt{color:#596A65}.kv dd{margin:0}table{border-collapse:collapse;width:100%;margin:6px 0;font-size:14px}th,td{border:1px solid #ccd8d4;padding:5px 7px;text-align:left;vertical-align:top}th{background:#F2F5F4;font-size:12px;text-transform:uppercase}.r-ck{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px dotted #ccd8d4}.r-sum{display:grid;grid-template-columns:1fr 140px 50px;gap:10px;align-items:center;padding:2px 0}.bar{height:6px;background:#E8ECEB;border-radius:3px;overflow:hidden}.bar i{display:block;height:100%}.v-S,.score.g{color:#1E7F47}.v-P,.score.m{color:#9A6412}.v-N,.score.b{color:#B4380C}.v-NA{color:#7B8884}.sig{margin-top:48px;border-top:1px solid #14221E;width:320px;padding-top:4px}`;
+function reportFull(d,nm){
+  const a=d.a||{};
+  const body=reportBody(d,nm).replace(/var\(--ok\)/g,"#1E7F47").replace(/var\(--warn\)/g,"#9A6412").replace(/var\(--bad\)/g,"#B4380C");
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Visita técnica — ${esc(a.unidade||"USF")}</title><style>${REPORT_CSS}</style></head><body>${body}<div class="sig">${esc(a.assinatura||"Assinatura do responsável pela visita")}</div></body></html>`;
+}
+const reportSafe=d=>((d.a||{}).unidade||"USF").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g,"-")||"USF";
+async function downloadReport(d,nm){
+  try{await st.downloads.save({filename:`visita-tecnica-${reportSafe(d)}.html`,data:reportFull(d,nm)});toast("Relatório baixado. Abra no navegador ou no Word para imprimir.")}
+  catch(e){if(e&&e.code!=="declined")toast("Não foi possível baixar o relatório aqui.")}
+}
+const scopeCss=(css,pre)=>css.replace(/(^|})\s*([^{}]+)\{/g,(m,o,sel)=>o+sel.split(",").map(x=>{x=x.trim();return x==="body"?pre:pre+" "+x}).join(",")+"{");
+async function downloadPDF(d,nm){
+  if(!window.html2pdf){toast("Gerador de PDF indisponível. Verifique a conexão.");return}
+  const btn=$("#pdfBtn");if(btn){btn.disabled=true;btn.textContent="Gerando PDF…"}
+  const inner=new DOMParser().parseFromString(reportFull(d,nm),"text/html").body.innerHTML;
+  const ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;z-index:9999;background:#fff;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:24px";
+  ov.innerHTML=`<style>${scopeCss(REPORT_CSS,"#pdfRoot")}
+    #pdfRoot{width:700px;max-width:none;margin:0;padding:0;background:#fff;color:#14221E;font-family:"Segoe UI",Arial,sans-serif;font-size:14px;line-height:1.5}
+    #pdfRoot *{font-family:inherit;box-sizing:border-box}
+    #pdfRoot h1,#pdfRoot h2,#pdfRoot h3{font-family:inherit;line-height:1.25}
+    #pdfRoot .pdf-wait{position:fixed;top:12px;right:16px;font:600 14px "Segoe UI",Arial,sans-serif;color:#596A65}
+    #pdfRoot a{color:inherit;text-decoration:none}
+  </style><div class="pdf-wait" data-html2canvas-ignore="true">Gerando PDF…</div><div id="pdfRoot">${inner}</div>`;
+  document.body.appendChild(ov);
+  const root=ov.querySelector("#pdfRoot");
+  try{
+    await new Promise(r=>setTimeout(r,200));
+    await html2pdf().set({margin:[12,10,14,10],filename:`visita-tecnica-${reportSafe(d)}.pdf`,image:{type:"jpeg",quality:.95},
+      html2canvas:{scale:2,useCORS:true,scrollX:0,scrollY:0,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
+      pagebreak:{mode:["css","legacy"],avoid:["tr",".r-ck",".r-sum","h2","h3"]}}).from(root).save();
+    toast("PDF baixado.");
+  }catch(e){toast("Não foi possível gerar o PDF.")}
+  finally{ov.remove();if(btn){btn.disabled=false;btn.textContent="Baixar PDF"}}
+}
+/* ============ Exportar Word (.docx) ============ */
+const DXC={S:"1E7F47",P:"9A6412",N:"B4380C",NA:"7B8884",g:"1E7F47",m:"9A6412",b:"B4380C"};
+function dxColor(cl){
+  if(/\bmuted\b/.test(cl))return"7B8884";
+  let m=cl.match(/\bv-(S|P|N|NA)\b/);if(m)return DXC[m[1]];
+  m=cl.match(/\bscore\s+(g|m|b)\b/);if(m)return DXC[m[1]];
+  return null;
+}
+function dxRuns(node,base){
+  const out=[];
+  node.childNodes.forEach(c=>{
+    if(c.nodeType===3){if(c.textContent)out.push(new docx.TextRun({text:c.textContent,...base}));return}
+    if(c.nodeType!==1)return;
+    if(c.tagName==="BR"){out.push(new docx.TextRun({break:1}));return}
+    const o={...base};
+    if(c.tagName==="B"||c.tagName==="STRONG")o.bold=true;
+    const col=dxColor(c.getAttribute("class")||"");if(col)o.color=col;
+    out.push(...dxRuns(c,o));
+  });
+  return out;
+}
+function buildDocx(d,nm){
+  const D=docx,TW=9638;
+  const none={style:D.BorderStyle.SINGLE,size:2,color:"FFFFFF"};
+  const thin={style:D.BorderStyle.SINGLE,size:4,color:"CCD8D4"};
+  const dom=new DOMParser().parseFromString(`<body>${reportBody(d,nm)}</body>`,"text/html");
+  const sig=((d.a||{}).assinatura)||"Assinatura do responsável pela visita";
+  const cell=(node,w,o={})=>new D.TableCell({
+    width:{size:w,type:D.WidthType.DXA},margins:{top:50,bottom:50,left:90,right:90},
+    shading:o.head?{type:D.ShadingType.CLEAR,fill:"F2F5F4",color:"auto"}:undefined,
+    borders:{top:o.head?thin:none,left:o.box?thin:none,right:o.box?thin:none,bottom:thin},
+    children:[new D.Paragraph({keepNext:!!o.keep,keepLines:true,alignment:o.right?D.AlignmentType.RIGHT:undefined,
+      children:dxRuns(node,{size:o.head?17:21,bold:!!o.head||node.tagName==="B",color:o.head?"596A65":(o.gray?"596A65":(dxColor(node.getAttribute("class")||"")||undefined)),allCaps:!!o.head})})]
+  });
+  const table=(rows,widths)=>new D.Table({width:{size:TW,type:D.WidthType.DXA},columnWidths:widths,
+    borders:{top:none,bottom:none,left:none,right:none,insideHorizontal:none,insideVertical:none},rows});
+  const mk=(txt)=>{const el=dom.createElement("span");el.textContent=txt;return el};
+  const kids=[...dom.body.children],out=[];
+  for(let i=0;i<kids.length;i++){
+    const el=kids[i],tag=el.tagName,cl=el.getAttribute("class")||"";
+    if(tag==="H1"){out.push(new D.Paragraph({heading:D.HeadingLevel.HEADING_1,spacing:{after:80},children:[new D.TextRun({text:el.textContent,bold:true,size:36,color:"14221E"})]}));continue}
+    if(tag==="H2"){out.push(new D.Paragraph({heading:D.HeadingLevel.HEADING_2,keepNext:true,spacing:{before:320,after:120},border:{bottom:{style:D.BorderStyle.SINGLE,size:6,color:"CCD8D4",space:2}},children:[new D.TextRun({text:el.textContent,bold:true,size:28,color:"0D6A56"})]}));continue}
+    if(tag==="H3"){out.push(new D.Paragraph({keepNext:true,spacing:{before:200,after:60},children:[new D.TextRun({text:el.textContent,bold:true,size:19,color:"596A65",allCaps:true})]}));continue}
+    if(tag==="P"){out.push(new D.Paragraph({spacing:{after:80},children:dxRuns(el,{size:21,color:dxColor(cl)||undefined})}));continue}
+    if(tag==="DL"){
+      const rows=[];const ch=[...el.children];
+      for(let j=0;j<ch.length;j+=2){const kp=j+2<ch.length;rows.push(new D.TableRow({cantSplit:true,children:[cell(ch[j],3200,{gray:true,keep:kp}),cell(ch[j+1],TW-3200,{keep:kp})]}))}
+      out.push(table(rows,[3200,TW-3200]));out.push(new D.Paragraph({spacing:{after:60},children:[]}));continue;
+    }
+    if(cl.includes("r-sum")){
+      const grp=[];
+      while(i<kids.length&&(kids[i].getAttribute("class")||"").includes("r-sum")){grp.push(kids[i]);i++}
+      i--;
+      const rows=grp.map((g,j)=>{const c=[...g.children],kp=j<grp.length-1;return new D.TableRow({cantSplit:true,children:[cell(c[0],TW-1400,{keep:kp}),cell(c[c.length-1],1400,{right:true,keep:kp})]})});
+      out.push(table(rows,[TW-1400,1400]));continue;
+    }
+    if(cl.includes("r-ck")){
+      const grp=[];
+      while(i<kids.length&&(kids[i].getAttribute("class")||"").includes("r-ck")){grp.push(kids[i]);i++}
+      i--;
+      const rows=grp.map((g,j)=>{const c=[...g.children],kp=j<grp.length-1;return new D.TableRow({cantSplit:true,children:[cell(c[0],TW-1800,{keep:kp}),cell(c[1],1800,{right:true,keep:kp})]})});
+      out.push(table(rows,[TW-1800,1800]));continue;
+    }
+    if(cl.includes("tw")){
+      const t=el.querySelector("table");if(!t)continue;
+      const n=t.querySelectorAll("thead th").length||3;
+      const widths=n===5?[2500,800,900,1400,TW-5600]:n===3?[3200,3600,TW-6800]:Array(n).fill(Math.floor(TW/n));
+      const rows=[];const trs=[...t.querySelectorAll("tr")];
+      trs.forEach((tr,ri)=>{
+        const head=!!tr.querySelector("th");const kp=trs.length<=14&&ri<trs.length-1;
+        rows.push(new D.TableRow({tableHeader:head,cantSplit:true,children:[...tr.children].map((td,j)=>cell(td,widths[j]||widths[0],{head,box:true,keep:kp||head}))}));
+      });
+      out.push(table(rows,widths));out.push(new D.Paragraph({spacing:{after:60},children:[]}));continue;
+    }
+    if(tag==="OL"){[...el.children].forEach((li,j)=>out.push(new D.Paragraph({spacing:{after:60},indent:{left:360,hanging:360},children:[new D.TextRun({text:`${j+1}.  `,size:21,bold:true}),...dxRuns(li,{size:21})]})));continue}
+  }
+  out.push(new D.Paragraph({spacing:{before:900},indent:{right:4800},border:{top:{style:D.BorderStyle.SINGLE,size:6,color:"14221E",space:4}},children:[new D.TextRun({text:sig,size:19,color:"596A65"})]}));
+  return new D.Document({
+    creator:"Distrito Sanitário VIII",title:`Visita técnica — ${(d.a||{}).unidade||"USF"}`,
+    styles:{default:{document:{run:{font:"Calibri",size:21,color:"14221E"}}}},
+    sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:1300,bottom:1200,left:1134,right:1134}}},
+      headers:{default:new D.Header({children:[new D.Paragraph({alignment:D.AlignmentType.RIGHT,children:[new D.TextRun({text:"Distrito Sanitário VIII",bold:true,size:18,color:"0D6A56"})]})]})},
+      footers:{default:new D.Footer({children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:"Página ",size:17,color:"7B8884"}),new D.TextRun({children:[D.PageNumber.CURRENT],size:17,color:"7B8884"}),new D.TextRun({text:" de ",size:17,color:"7B8884"}),new D.TextRun({children:[D.PageNumber.TOTAL_PAGES],size:17,color:"7B8884"})]})]})},
+      children:out
+    }]
+  });
+}
+async function downloadDocx(d,nm){
+  if(!window.docx){toast("Gerador de Word indisponível. Verifique a conexão.");return}
+  const btn=$("#docBtn");if(btn){btn.disabled=true;btn.textContent="Gerando Word…"}
+  try{
+    const blob=await docx.Packer.toBlob(buildDocx(d,nm));
+    await st.downloads.save({filename:`visita-tecnica-${reportSafe(d)}.docx`,data:blob});
+    toast("Documento Word baixado.");
+  }catch(e){console.error(e);toast("Não foi possível gerar o documento Word.")}
+  finally{if(btn){btn.disabled=false;btn.textContent="Baixar Word (.docx)"}}
+}
+
+async function exportCSV(){
+  if(!st.downloads){toast("Download indisponível nesta visualização.");return}
+  const scSecs=SECTIONS.filter(s=>flat(s.fields).some(f=>f.type==="check"));
+  const head=["Unidade","Nº eSF","População/cadastros","Nº atendimentos","Datas","Responsáveis","Status","Preenchimento %","Conformidade geral %",...scSecs.map(s=>`${s.n}. ${s.title} %`),"Pontos positivos","Nós críticos","Recomendações","Última edição"];
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const lines=[head.map(q).join(";")];
+  st.visits.forEach(v=>{const a=v.a||{};const ts=totalScore(a);
+    lines.push([a.unidade,a.n_esf,a.populacao,a.n_atend,(a.visitas||[]).filter(x=>x&&x.data).map(x=>fmtDate(x.data)).join(", "),(a.responsaveis||"").replace(/\n/g,", "),v.status==="concluida"?"Concluída":"Rascunho",Math.round(totalProgress(a)*100),ts==null?"":Math.round(ts*100),...scSecs.map(s=>{const sc=secScore(s,a);return sc==null?"":Math.round(sc*100)}),
+      (a.positivos||[]).filter(Boolean).join(" | "),(a.nos||[]).filter(Boolean).join(" | "),(a.recs||[]).filter(x=>x&&(x.p||x.s)).map(x=>`${x.p} → ${x.s}${x.r?` (${x.r})`:""}`).join(" | "),fmtTs(v.updatedAt)].map(q).join(";"))});
+  try{await st.downloads.save({filename:"visitas-tecnicas-usf.csv",data:"﻿"+lines.join("\r\n")});toast("Planilha baixada.")}
+  catch(e){if(e&&e.code!=="declined")toast("Não foi possível baixar a planilha aqui.")}
+}
+
+/* ============ Editor do roteiro ============ */
+let draft=null,draftStart="";
+function openRoteiro(){
+  closeDoc();st.view="roteiro";st.cur=null;st.curId=null;
+  draft=normCfg(structuredClone(CFG));draftStart=JSON.stringify(draft);
+  renderRoteiro();window.scrollTo(0,0);
+}
+function renderRoteiro(){
+  $("#saveState").hidden=true;
+  const lab=f=>draft.labels[f.k]!=null?draft.labels[f.k]:f.label;
+  const secHtml=BASE_SECTIONS.map(b=>{
+    const o=draft.secs[b.id]||{};
+    const fl=[];
+    let lastCheck=-1;b.fields.forEach((f,i)=>{if(f.type==="check")lastCheck=i});
+    const addedHtml=()=>(draft.added[b.id]||[]).map((x,i)=>`<div class="re-item new"><input type="text" data-added="${b.id}" data-idx="${i}" value="${esc(x.label)}" placeholder="Texto do novo item" aria-label="Novo item"><span class="tag">novo</span><button class="btn sm ghost danger" data-rm="${b.id}:${i}" title="Remover item novo">Remover</button></div>`).join("");
+    b.fields.forEach((f,i)=>{
+      const one=x=>{
+        if(x.type==="sub")return`<div class="re-sub">${esc(x.label)}</div>`;
+        if(!x.k)return"";
+        if(x.type==="check"){
+          const off=!!draft.hidden[x.k];
+          return`<div class="re-item${off?" off":""}"><input type="text" data-lbl="${esc(x.k)}" value="${esc(lab(x))}" ${off?"disabled":""} aria-label="Item do checklist"><span class="tag">checklist</span>${off?`<button class="btn sm" data-show="${esc(x.k)}">Restaurar</button>`:`<button class="btn sm ghost danger" data-hide="${esc(x.k)}" title="Remover do roteiro">Remover</button>`}</div>`;
+        }
+        if(["visits","team"].includes(x.type))return"";
+        return`<div class="re-item"><input type="text" data-lbl="${esc(x.k)}" value="${esc(lab(x))}" aria-label="Campo"><span class="tag">campo</span></div>`;
+      };
+      fl.push(f.type==="row"?f.fields.map(one).join(""):one(f));
+      if(i===lastCheck)fl.push(addedHtml());
+    });
+    const hasChecks=lastCheck>=0;
+    return`<section class="re-sec" data-sid="${b.id}">
+      <div class="re-head"><span class="n">${esc(b.n)}</span><input type="text" data-stitle="${b.id}" value="${esc(o.title!=null&&o.title!==""?o.title:b.title)}" aria-label="Título da seção"></div>
+      <label class="re-lab">Orientação da seção</label>
+      <textarea data-sguide="${b.id}">${esc(o.guide!=null&&o.guide!==""?o.guide:b.guide)}</textarea>
+      <label class="re-lab">Itens</label>
+      ${fl.join("")}
+      ${hasChecks?`<button class="btn sm" data-add="${b.id}">+ Adicionar item</button>`:""}
+    </section>`;
+  }).join("");
+  $("#app").innerHTML=`<div class="re">
+    <div class="form-top" style="margin-bottom:16px"><button class="btn ghost" id="reBack">← Visitas</button><h1></h1></div>
+    <h1 style="font-size:26px;font-weight:800;margin-bottom:8px">Editar roteiro</h1>
+    <div class="re-intro">As alterações valem para <b>toda a equipe</b> e para todas as visitas, inclusive as concluídas. Itens removidos deixam de aparecer e de contar na conformidade, mas as respostas já registradas continuam guardadas, e é possível restaurá-los. Novos itens entram ao final da lista de itens da seção.</div>
+    ${secHtml}
+    <div class="re-actions"><button class="btn danger" id="reReset">Restaurar roteiro padrão</button>
+      <div style="display:flex;gap:8px"><button class="btn" id="reCancel">Cancelar</button><button class="btn primary" id="reSave">Salvar alterações</button></div></div>
+  </div>`;
+  const root=$("#app");
+  root.oninput=e=>{
+    const t=e.target;
+    if(t.dataset.lbl!==undefined){const k=t.dataset.lbl;const f=findBase(k);const v=t.value;if(!v.trim()||(f&&v===f.label))delete draft.labels[k];else draft.labels[k]=v}
+    else if(t.dataset.added!==undefined){draft.added[t.dataset.added][+t.dataset.idx].label=t.value}
+    else if(t.dataset.stitle!==undefined){(draft.secs[t.dataset.stitle]=draft.secs[t.dataset.stitle]||{}).title=t.value}
+    else if(t.dataset.sguide!==undefined){(draft.secs[t.dataset.sguide]=draft.secs[t.dataset.sguide]||{}).guide=t.value}
+  };
+  root.onclick=e=>{
+    const b=e.target.closest("button");if(!b)return;
+    const d=b.dataset;
+    if(d.hide){draft.hidden[d.hide]=true;renderRoteiro()}
+    else if(d.show){delete draft.hidden[d.show];renderRoteiro()}
+    else if(d.rm){const[sid,i]=d.rm.split(":");draft.added[sid].splice(+i,1);renderRoteiro()}
+    else if(d.add){const sid=d.add;(draft.added[sid]=draft.added[sid]||[]).push({k:`${sid}_x${Date.now().toString(36)}${Math.random().toString(36).slice(2,5)}`,label:""});renderRoteiro();
+      const ins=document.querySelectorAll(`[data-added="${sid}"]`);const last=ins[ins.length-1];if(last)last.focus()}
+  };
+  $("#reBack").onclick=$("#reCancel").onclick=()=>{if(JSON.stringify(draft)!==draftStart&&!confirm("Descartar as alterações feitas no roteiro?"))return;goList()};
+  $("#reReset").onclick=()=>{if(confirm("Voltar ao roteiro padrão? As alterações só valem depois de salvar.")){draft=normCfg({});renderRoteiro()}};
+  $("#reSave").onclick=saveRoteiro;
+}
+function findBase(k){for(const b of BASE_SECTIONS)for(const f of flat(b.fields))if(f.k===k)return f;return null}
+async function saveRoteiro(){
+  const btn=$("#reSave");btn.disabled=true;btn.textContent="Salvando…";
+  const out=normCfg(structuredClone(draft));
+  Object.keys(out.added).forEach(sid=>{out.added[sid]=out.added[sid].filter(x=>x.label&&x.label.trim());if(!out.added[sid].length)delete out.added[sid]});
+  BASE_SECTIONS.forEach(b=>{const o=out.secs[b.id];if(!o)return;
+    if(!o.title||o.title.trim()===b.title)delete o.title;if(!o.guide||o.guide.trim()===b.guide)delete o.guide;if(!Object.keys(o).length)delete out.secs[b.id]});
+  try{await Store.saveConfig(out);applyConfig(out);toast("Roteiro atualizado.");goList()}
+  catch(e){btn.disabled=false;btn.textContent="Salvar alterações";toast(e&&e.code==="invalid_argument"?"Você não tem permissão para editar o roteiro.":"Não foi possível salvar o roteiro. Tente novamente.")}
+}
+
+/* ============ Login ============ */
+function showLogin(mode){
+  mode=mode||"in";const app=$("#app");$("#saveState").hidden=true;$("#logoutBtn").hidden=true;
+  const up=mode==="up";
+  app.innerHTML=`<div class="login"><h1>${up?"Criar conta":"Entrar"}</h1><p>Acesso da equipe ao banco de visitas técnicas.</p>
+    ${up?`<label for="lnome">Nome</label><input id="lnome" autocomplete="name">`:""}
+    <label for="lmail">E-mail</label><input id="lmail" type="email" autocomplete="email">
+    <label for="lsenha">Senha</label><input id="lsenha" type="password" autocomplete="${up?"new-password":"current-password"}" minlength="6">
+    <button class="btn primary" id="lgo">${up?"Criar conta":"Entrar"}</button>
+    <div id="lmsg"></div>
+    <div class="switch">${up?`Já tem conta? <a id="lsw">Entrar</a>`:`Primeiro acesso? <a id="lsw">Criar conta</a>`}</div></div>`;
+  const msg=(t,ok)=>{$("#lmsg").innerHTML=t?`<div class="msg${ok?" ok":""}">${esc(t)}</div>`:""};
+  $("#lsw").onclick=()=>showLogin(up?"in":"up");
+  const go=async()=>{
+    const email=$("#lmail").value.trim(),password=$("#lsenha").value;
+    if(!email||!password){msg("Informe e-mail e senha.");return}
+    const btn=$("#lgo");btn.disabled=true;msg("");
+    try{
+      if(up){
+        const name=($("#lnome").value||"").trim();
+        const{data,error}=await sb.auth.signUp({email,password,options:{data:{name}}});
+        if(error)throw error;
+        if(data.session){await enter(data.session.user);return}
+        msg("Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.",true);
+      }else{
+        const{data,error}=await sb.auth.signInWithPassword({email,password});
+        if(error)throw error;await enter(data.user);return;
+      }
+    }catch(e){
+      const m=String(e&&e.message||"");
+      msg(/invalid login/i.test(m)?"E-mail ou senha incorretos.":/not confirmed/i.test(m)?"Confirme seu e-mail antes de entrar.":/already registered/i.test(m)?"Este e-mail já tem conta. Use Entrar.":/least 6/i.test(m)?"A senha precisa ter pelo menos 6 caracteres.":"Não foi possível continuar: "+m);
+    }
+    btn.disabled=false;
+  };
+  $("#lgo").onclick=go;
+  app.querySelectorAll("input").forEach(i=>i.onkeydown=e=>{if(e.key==="Enter")go()});
+}
+async function enter(user){
+  st.uid=user.id;Store.db=true;
+  const lb=$("#logoutBtn");lb.hidden=false;
+  lb.onclick=async()=>{await flushSave();await sb.auth.signOut();location.reload()};
+  try{applyConfig(await Store.loadConfig())}catch(e){toast("Não foi possível carregar a personalização do roteiro; usando o padrão.")}
+  Store.subscribeConfig(c=>{
+    applyConfig(c);
+    if(st.view==="roteiro")return;
+    if(st.sec>=SECTIONS.length)st.sec=0;
+    if(st.view==="list")renderList();else if(!Object.keys(st.pending).length){render();}
+    toast("O roteiro foi atualizado por um colega.");
+  });
+  startList();
+}
+
+/* ============ Início ============ */
+const browserDownloads={save:async({filename,data})=>{
+  const b=data instanceof Blob?data:new Blob([data],{type:filename.endsWith(".csv")?"text/csv;charset=utf-8":"text/html;charset=utf-8"});
+  const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);
+}};
+(async function init(){
+  st.downloads=browserDownloads;
+  window.addEventListener("beforeunload",()=>{if(Object.keys(st.pending).length)doSave()});
+  if(!window.supabase){startList();return} // sem a biblioteca: modo sem salvamento
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  sb.auth.onAuthStateChange(ev=>{if(ev==="SIGNED_OUT"&&st.uid)location.reload()});
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(session)await enter(session.user);else showLogin();
+  }catch(e){showLogin()}
+})();
+</script>
+
+</body></html>
