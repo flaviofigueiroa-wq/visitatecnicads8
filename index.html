@@ -102,6 +102,10 @@ table.vt{width:100%;border-collapse:collapse;min-width:760px}
 .snav .c{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
 .snav .c.full{color:var(--ok)}
 .msel{display:none}
+.setor-tag{display:inline-block;font-size:12.5px;font-weight:600;background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:2px 10px;margin:0 0 12px}
+.snav .stag{display:block;font-size:11.5px;font-weight:600;color:var(--accent);margin-top:1px}
+.sfilter{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:14px;color:var(--muted)}
+.sfilter select{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 8px;color:var(--ink)}
 .sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px}
 .sec-h{display:flex;gap:14px;align-items:baseline;margin-bottom:6px}
 .sec-h .n{font-family:var(--f-mono);color:var(--accent);font-size:15px;font-weight:500}
@@ -464,12 +468,16 @@ function deepMerge(t,p){for(const k in p){const v=p[k];if(v&&typeof v==="object"
 const BASE_SECTIONS=structuredClone(SECTIONS);
 let CFG={labels:{},hidden:{},added:{},secs:{}};
 const normCfg=c=>{c=c||{};return{labels:c.labels||{},hidden:c.hidden||{},added:c.added||{},secs:c.secs||{}}};
+const setoresDe=s=>(s.setor||"").split(/\s*[\/,;]\s*/).map(x=>x.trim()).filter(Boolean);
+const setoresTodos=()=>[...new Set(SECTIONS.flatMap(setoresDe))].sort((a,b)=>a.localeCompare(b,"pt"));
+const SETORES_SUG=["Gerência","Enfermagem","Médico","Odontologia","Agentes Comunitários de Saúde","Recepção","Administrativo","Farmácia","Regulação","Vigilância em Saúde","Equipe multiprofissional","Toda a equipe"];
 function applyConfig(c){
   CFG=normCfg(structuredClone(c||{}));
   const out=BASE_SECTIONS.map(b=>{
     const s=structuredClone(b),o=CFG.secs[s.id]||{};
     if(o.title&&o.title.trim())s.title=o.title.trim();
     if(o.guide&&o.guide.trim())s.guide=o.guide.trim();
+    if(o.setor&&o.setor.trim())s.setor=o.setor.trim();
     const rl=f=>{if(f.type==="row"){f.fields.forEach(rl);return}if(f.k&&CFG.labels[f.k])f.label=CFG.labels[f.k]};
     s.fields.forEach(rl);
     s.fields=s.fields.filter(f=>!(f.type==="check"&&CFG.hidden[f.k]));
@@ -653,11 +661,13 @@ function renderForm(){
     ${st.canWrite?`<button class="btn ghost danger" id="delBtn" title="Excluir visita">Excluir</button>`:""}
   </div>
   ${st.cur.status==="concluida"?`<div class="banner">Visita concluída. Para alterar, clique em <b>Reabrir para edição</b>.</div>`:""}
+  ${setoresTodos().length?`<div class="sfilter"><label for="sfSel">Setor responsável:</label><select id="sfSel"><option value="">Todos os setores</option>${setoresTodos().map(x=>`<option value="${esc(x)}"${st.setorF===x?" selected":""}>${esc(x)}</option>`).join("")}</select></div>`:""}
   <div class="msel"><select id="msel" aria-label="Seção">${SECTIONS.map((s,i)=>`<option value="${i}"${i===st.sec?" selected":""}>${esc(s.n)}. ${esc(s.title)}</option>`).join("")}</select></div>
   <div class="grid">
     <nav class="snav" id="snav" aria-label="Seções do roteiro"></nav>
     <section class="sec ${lk?"locked":""}" id="sec">
       <div class="sec-h"><span class="n">${esc(sec.n)}</span><h2>${esc(sec.title)}</h2></div>
+      ${sec.setor?`<div class="setor-tag">Setor responsável: ${esc(sec.setor)}</div>`:""}
       <p class="guide">${esc(sec.guide)}</p>
       <div id="secScore"></div>
       <div class="fields" id="fields"></div>
@@ -685,18 +695,20 @@ function renderForm(){
   $("#prevBtn").onclick=()=>goSec(st.sec-1);
   $("#nextBtn")&&($("#nextBtn").onclick=()=>goSec(st.sec+1));
   $("#msel").onchange=e=>goSec(+e.target.value);
+  $("#sfSel")&&($("#sfSel").onchange=e=>{st.setorF=e.target.value;updateNav()});
 }
 function goSec(i){if(i<0||i>=SECTIONS.length)return;st.sec=i;renderForm();const t=$("#sec");if(t&&t.getBoundingClientRect().top<0)window.scrollTo({top:window.scrollY+t.getBoundingClientRect().top-80})}
 
+const secVisivel=(s,i)=>!st.setorF||i===st.sec||setoresDe(s).some(x=>x.toLowerCase()===st.setorF.toLowerCase());
 function updateNav(){
   const a=st.cur.a;const nav=$("#snav");if(!nav)return;
   const p=totalProgress(a);
   nav.innerHTML=`<div class="snav-p"><small><span>Preenchimento</span><span class="num">${Math.round(p*100)}%</span></small><div class="bar"><i style="width:${Math.round(p*100)}%"></i></div></div>`+
-  SECTIONS.map((s,i)=>{const pr=secProgress(s,a);return `<button data-i="${i}" class="${i===st.sec?"on":""}"><span class="n">${esc(s.n)}</span><span>${esc(s.title)}</span><span class="c ${pr.f===pr.t?"full":""}">${pr.f}/${pr.t}</span></button>`}).join("");
+  SECTIONS.map((s,i)=>{if(!secVisivel(s,i))return"";const pr=secProgress(s,a);return `<button data-i="${i}" class="${i===st.sec?"on":""}"><span class="n">${esc(s.n)}</span><span>${esc(s.title)}${s.setor?`<small class="stag">${esc(s.setor)}</small>`:""}</span><span class="c ${pr.f===pr.t?"full":""}">${pr.f}/${pr.t}</span></button>`}).join("");
   nav.querySelectorAll("button").forEach(b=>b.onclick=()=>goSec(+b.dataset.i));
   const sec=SECTIONS[st.sec];const sc=secScore(sec,a);const ss=$("#secScore");
   if(ss)ss.innerHTML=flat(sec.fields).some(f=>f.type==="check")?`<div class="sec-score"><span>Conformidade da seção</span><span class="score ${scoreCls(sc)}">${pct(sc)}</span><span>· Sim = 1, Parcial = 0,5, Não = 0; N/A não conta</span></div>`:"";
-  const ms=$("#msel");if(ms)[...ms.options].forEach((o,i)=>{const pr=secProgress(SECTIONS[i],a);o.textContent=`${SECTIONS[i].n}. ${SECTIONS[i].title} (${pr.f}/${pr.t})`});
+  const ms=$("#msel");if(ms)ms.innerHTML=SECTIONS.map((s,i)=>{if(!secVisivel(s,i))return"";const pr=secProgress(s,a);return`<option value="${i}"${i===st.sec?" selected":""}>${esc(s.n)}. ${esc(s.title)}${s.setor?" · "+esc(s.setor):""} (${pr.f}/${pr.t})</option>`}).join("");
   const ft=$("#ftitle");if(ft&&!ft.contains(document.activeElement))ft.textContent=a.unidade||"Nova visita";
 }
 
@@ -802,6 +814,7 @@ function reportBody(d,nm){
     h+=`<div class="r-sum"><span>${esc(s.n)}. ${esc(s.title)}</span><div class="bar"><i style="width:${sc==null?0:Math.round(sc*100)}%;background:${sc==null?"transparent":sc>=.75?"var(--ok)":sc>=.5?"var(--warn)":"var(--bad)"}"></i></div><span class="score ${scoreCls(sc)}" style="text-align:right">${pct(sc)}</span></div>`});
   SECTIONS.forEach(s=>{
     h+=`<h2>${esc(s.n)}. ${esc(s.title)}</h2>`;
+    if(s.setor)h+=`<p class="muted" style="margin:0 0 8px;font-size:13px;color:#596A65">Setor responsável: ${esc(s.setor)}</p>`;
     if(s.id==="s1"){
       h+=`<dl class="kv"><dt>Unidade de Saúde</dt><dd>${esc(a.unidade||"—")}</dd><dt>Nº de eSF</dt><dd>${esc(a.n_esf||"—")}</dd><dt>População / território / cadastros</dt><dd>${esc(a.populacao||"—")}</dd><dt>Nº de atendimentos</dt><dd>${esc(a.n_atend||"—")}</dd>
       <dt>Indicadores de qualidade (AlumIA)</dt><dd>${esc(a.indicadores||"—").replace(/\n/g,"<br>")}</dd><dt>Avaliação do acolhimento</dt><dd>${esc(a.acolh_result||"—").replace(/\n/g,"<br>")}</dd>
@@ -1016,6 +1029,8 @@ function renderRoteiro(){
     const hasChecks=lastCheck>=0;
     return`<section class="re-sec" data-sid="${b.id}">
       <div class="re-head"><span class="n">${esc(b.n)}</span><input type="text" data-stitle="${b.id}" value="${esc(o.title!=null&&o.title!==""?o.title:b.title)}" aria-label="Título da seção"></div>
+      <label class="re-lab">Setor responsável pelo preenchimento</label>
+      <input type="text" list="setorList" data-ssetor="${b.id}" value="${esc(o.setor||"")}" placeholder="Ex.: Enfermagem (separe vários com /)">
       <label class="re-lab">Orientação da seção</label>
       <textarea data-sguide="${b.id}">${esc(o.guide!=null&&o.guide!==""?o.guide:b.guide)}</textarea>
       <label class="re-lab">Itens</label>
@@ -1023,7 +1038,7 @@ function renderRoteiro(){
       ${hasChecks?`<button class="btn sm" data-add="${b.id}">+ Adicionar item</button>`:""}
     </section>`;
   }).join("");
-  $("#app").innerHTML=`<div class="re">
+  $("#app").innerHTML=`<datalist id="setorList">${SETORES_SUG.map(x=>`<option value="${esc(x)}">`).join("")}</datalist><div class="re">
     <div class="form-top" style="margin-bottom:16px"><button class="btn ghost" id="reBack">← Visitas</button><h1></h1></div>
     <h1 style="font-size:26px;font-weight:800;margin-bottom:8px">Editar roteiro</h1>
     <div class="re-intro">As alterações valem para <b>toda a equipe</b> e para todas as visitas, inclusive as concluídas. Itens removidos deixam de aparecer e de contar na conformidade, mas as respostas já registradas continuam guardadas, e é possível restaurá-los. Novos itens entram ao final da lista de itens da seção.</div>
@@ -1037,6 +1052,7 @@ function renderRoteiro(){
     if(t.dataset.lbl!==undefined){const k=t.dataset.lbl;const f=findBase(k);const v=t.value;if(!v.trim()||(f&&v===f.label))delete draft.labels[k];else draft.labels[k]=v}
     else if(t.dataset.added!==undefined){draft.added[t.dataset.added][+t.dataset.idx].label=t.value}
     else if(t.dataset.stitle!==undefined){(draft.secs[t.dataset.stitle]=draft.secs[t.dataset.stitle]||{}).title=t.value}
+    else if(t.dataset.ssetor!==undefined){(draft.secs[t.dataset.ssetor]=draft.secs[t.dataset.ssetor]||{}).setor=t.value}
     else if(t.dataset.sguide!==undefined){(draft.secs[t.dataset.sguide]=draft.secs[t.dataset.sguide]||{}).guide=t.value}
   };
   root.onclick=e=>{
@@ -1058,7 +1074,7 @@ async function saveRoteiro(){
   const out=normCfg(structuredClone(draft));
   Object.keys(out.added).forEach(sid=>{out.added[sid]=out.added[sid].filter(x=>x.label&&x.label.trim());if(!out.added[sid].length)delete out.added[sid]});
   BASE_SECTIONS.forEach(b=>{const o=out.secs[b.id];if(!o)return;
-    if(!o.title||o.title.trim()===b.title)delete o.title;if(!o.guide||o.guide.trim()===b.guide)delete o.guide;if(!Object.keys(o).length)delete out.secs[b.id]});
+    if(!o.title||o.title.trim()===b.title)delete o.title;if(!o.guide||o.guide.trim()===b.guide)delete o.guide;if(!o.setor||!o.setor.trim())delete o.setor;if(!Object.keys(o).length)delete out.secs[b.id]});
   try{await Store.saveConfig(out);applyConfig(out);toast("Roteiro atualizado.");goList()}
   catch(e){btn.disabled=false;btn.textContent="Salvar alterações";toast(e&&e.code==="invalid_argument"?"Você não tem permissão para editar o roteiro.":"Não foi possível salvar o roteiro. Tente novamente.")}
 }
